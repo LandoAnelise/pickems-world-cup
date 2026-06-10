@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import Image from 'next/image'
 import { type Match } from '@/lib/types'
-import { getFlag } from '@/lib/flags'
+import { getFlagUrl } from '@/lib/flags'
 import { syncFixtures, syncResults, setManualResult } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -117,10 +118,12 @@ export function AdminPanel({ matches: initialMatches }: Props) {
                     <Badge variant="outline" className="shrink-0">
                       {m.group_name ?? m.stage.toUpperCase()}
                     </Badge>
-                    <span className="flex-1 min-w-[180px]">
-                      {getFlag(m.home_team)} {m.home_team}
-                      {' × '}
-                      {getFlag(m.away_team)} {m.away_team}
+                    <span className="flex-1 min-w-[180px] flex items-center gap-1.5">
+                      {getFlagUrl(m.home_team) && <Image src={getFlagUrl(m.home_team)} alt={m.home_team} width={24} height={16} unoptimized className="rounded" />}
+                      {m.home_team}
+                      <span className="text-muted-foreground mx-1">×</span>
+                      {getFlagUrl(m.away_team) && <Image src={getFlagUrl(m.away_team)} alt={m.away_team} width={24} height={16} unoptimized className="rounded" />}
+                      {m.away_team}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <Input

@@ -64,7 +64,7 @@ export default function RegisterPage() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">⚽ Pick&apos;ems Copa 2026</CardTitle>
+        <CardTitle className="text-2xl">⚽ Pick&apos;ems CDC Copa 2026</CardTitle>
         <CardDescription>Crie sua conta e entre na disputa</CardDescription>
       </CardHeader>
 

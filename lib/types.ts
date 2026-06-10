@@ -38,4 +38,5 @@ export type LeaderboardEntry = {
   total_points: number
   picks_count: number
   exact_scores: number
+  correct_winners: number
 }

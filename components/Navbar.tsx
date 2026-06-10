@@ -24,6 +24,7 @@ export function Navbar({ profile }: { profile: Profile }) {
     ...(profile.is_admin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
 
+
   return (
     <header className="sticky top-0 z-50 bg-background border-b">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
@@ -44,9 +45,13 @@ export function Navbar({ profile }: { profile: Profile }) {
             </Link>
           ))}
         </nav>
-        <span className="text-sm text-muted-foreground hidden sm:block">
+        <Link
+          href="/perfil"
+          className="text-sm text-muted-foreground hidden sm:block hover:text-foreground transition-colors"
+          title="Editar apelido"
+        >
           {profile.display_name ?? profile.username}
-        </span>
+        </Link>
         <Button variant="outline" size="sm" onClick={handleLogout}>
           Sair
         </Button>

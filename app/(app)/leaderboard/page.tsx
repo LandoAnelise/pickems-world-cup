@@ -45,7 +45,8 @@ export default async function LeaderboardPage() {
                 <TableHead className="w-12">#</TableHead>
                 <TableHead>Participante</TableHead>
                 <TableHead className="text-center">Palpites</TableHead>
-                <TableHead className="text-center">Placares exatos</TableHead>
+                <TableHead className="text-center">Vencedor certo</TableHead>
+                <TableHead className="text-center">Placar exato</TableHead>
                 <TableHead className="text-right">Pontos</TableHead>
               </TableRow>
             </TableHeader>
@@ -68,6 +69,9 @@ export default async function LeaderboardPage() {
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground">
                       {Number(entry.picks_count)}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">
+                      {Number(entry.correct_winners)}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground">
                       {Number(entry.exact_scores)} ⭐

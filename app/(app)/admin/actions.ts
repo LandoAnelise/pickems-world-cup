@@ -30,8 +30,10 @@ export async function syncFixtures(): Promise<{ imported: number; error?: string
     return { imported: 0, error: String(e) }
   }
 
+  const readyGames = games.filter((g) => g.home_team && g.away_team)
+
   const { error } = await adminClient.from('matches').upsert(
-    games.map((g) => ({
+    readyGames.map((g) => ({
       external_id: g.id,
       stage: g.type,
       group_name: g.group,
@@ -43,7 +45,7 @@ export async function syncFixtures(): Promise<{ imported: number; error?: string
   )
 
   if (error) return { imported: 0, error: error.message }
-  return { imported: games.length }
+  return { imported: readyGames.length }
 }
 
 export async function syncResults(): Promise<{ updatedMatches: number; updatedPicks: number; error?: string }> {

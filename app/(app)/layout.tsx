@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/Navbar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -14,25 +14,27 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq('id', user.id)
     .single()
 
-  // Cria perfil se o trigger não executou (comum no primeiro login com Google OAuth)
+  // Cria perfil se não existir (trigger pode não ter rodado no OAuth)
   if (!profile) {
     const baseUsername = (user.email?.split('@')[0] ?? user.id.slice(0, 8))
-      .replace(/[^a-z0-9_]/gi, '_')
+      .replace(/[^a-z0-9]/gi, '_')
       .toLowerCase()
     const username = `${baseUsername}_${user.id.slice(0, 4)}`
-
     const displayName =
       user.user_metadata?.full_name ??
       user.user_metadata?.name ??
       user.user_metadata?.display_name ??
       baseUsername
 
-    const { data: created } = await supabase
+    // Admin client bypassa RLS para garantir a criação
+    const admin = createAdminClient()
+    const { data: created, error } = await admin
       .from('profiles')
       .upsert({ id: user.id, username, display_name: displayName }, { onConflict: 'id' })
       .select('*')
       .single()
 
+    if (error) console.error('[layout] profile create error:', error.message)
     if (!created) redirect('/login')
     profile = created
   }

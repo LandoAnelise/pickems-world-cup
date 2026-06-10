@@ -28,7 +28,6 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -44,23 +43,16 @@ function LoginForm() {
     router.refresh()
   }
 
-  async function handleGoogleLogin() {
-    setGoogleLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (error) {
-      toast.error(error.message)
-      setGoogleLoading(false)
-    }
+  function handleGoogleLogin() {
+    const redirectTo = encodeURIComponent(`${window.location.origin}/auth/callback`)
+    const authUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
+    window.location.href = authUrl
   }
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">⚽ Pick&apos;ems Copa 2026</CardTitle>
+        <CardTitle className="text-2xl">⚽ Pick&apos;ems CDC Copa 2026</CardTitle>
         <CardDescription>Entre na sua conta para fazer seus palpites</CardDescription>
       </CardHeader>
 
@@ -71,8 +63,8 @@ function LoginForm() {
           </p>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={googleLoading}>
-          {googleLoading ? 'Redirecionando...' : <><GoogleIcon />Entrar com Google</>}
+        <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin}>
+          <GoogleIcon />Entrar com Google
         </Button>
 
         <div className="flex items-center gap-3">
