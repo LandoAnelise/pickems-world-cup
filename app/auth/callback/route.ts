@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
+  const siteUrl = (process.env.SITE_URL ?? new URL(request.url).origin).replace(/\/$/, '')
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
-    const redirectTo = `${origin}${next}`
+    const redirectTo = `${siteUrl}${next}`
     const redirectResponse = NextResponse.redirect(redirectTo)
 
     // Cria o cliente com cookies lidos do request e escritos direto na response
@@ -35,5 +36,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Erro+ao+autenticar+com+Google`)
+  return NextResponse.redirect(`${siteUrl}/login?error=Erro+ao+autenticar+com+Google`)
 }
