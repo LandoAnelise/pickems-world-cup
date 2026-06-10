@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import type { CookieOptions } from '@supabase/ssr'
 
 export async function GET(request: NextRequest) {
   const siteUrl = (process.env.SITE_URL ?? new URL(request.url).origin).replace(/\/$/, '')
 
-  // Acumula os cookies que o Supabase quer setar (code verifier do PKCE)
-  const pendingCookies: Array<{ name: string; value: string; options: CookieOptions }> = []
+  // Response temporária para capturar os cookies do PKCE antes de saber a URL final
+  const cookieResponse = NextResponse.redirect(siteUrl)
 
   const supabase = createServerClient(
     process.env.SUPABASE_URL!,
@@ -14,7 +13,11 @@ export async function GET(request: NextRequest) {
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
-        setAll: (cookies) => pendingCookies.push(...cookies),
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieResponse.cookies.set(name, value, options)
+          )
+        },
       },
     }
   )
@@ -32,8 +35,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${siteUrl}/login?error=${encodeURIComponent(msg)}`)
   }
 
-  // Copia os cookies do PKCE para o redirect response
+  // Redireciona para o Google levando os cookies do PKCE
   const response = NextResponse.redirect(data.url)
-  pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+  cookieResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
   return response
 }
