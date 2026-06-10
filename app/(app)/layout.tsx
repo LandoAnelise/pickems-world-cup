@@ -39,8 +39,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
     if (error) console.error('[layout] profile create error:', error.message)
     if (!created) redirect('/login')
-    profile = created
+    profile = created!
   }
+
+  if (!profile) redirect('/login')
 
   return (
     <div className="min-h-screen flex flex-col">
