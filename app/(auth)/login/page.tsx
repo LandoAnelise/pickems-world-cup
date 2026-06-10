@@ -1,10 +1,9 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useActionState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { useSearchParams } from 'next/navigation'
+import { signInWithEmail } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,41 +20,10 @@ const GoogleIcon = () => (
 )
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const errorParam = searchParams.get('error')
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      toast.error(error.message)
-      setLoading(false)
-      return
-    }
-    router.push('/')
-    router.refresh()
-  }
-
-  async function handleGoogleLogin() {
-    setGoogleLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (error) {
-      toast.error(error.message)
-      setGoogleLoading(false)
-    }
-  }
+  const [state, action, pending] = useActionState(signInWithEmail, null)
+  const errorMsg = errorParam ?? state?.error
 
   return (
     <Card className="w-full max-w-sm">
@@ -65,14 +33,16 @@ function LoginForm() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {errorParam && (
+        {errorMsg && (
           <p className="text-sm text-destructive text-center bg-destructive/10 p-2 rounded-md">
-            {errorParam}
+            {errorMsg}
           </p>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={googleLoading}>
-          {googleLoading ? 'Redirecionando...' : <><GoogleIcon />Entrar com Google</>}
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/api/auth/google">
+            <GoogleIcon />Entrar com Google
+          </Link>
         </Button>
 
         <div className="flex items-center gap-3">
@@ -81,17 +51,17 @@ function LoginForm() {
           <Separator className="flex-1" />
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form action={action} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="email" name="email" type="email" placeholder="seu@email.com" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input id="password" name="password" type="password" placeholder="••••••••" required />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar com email'}
+          <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? 'Entrando...' : 'Entrar com email'}
           </Button>
         </form>
       </CardContent>

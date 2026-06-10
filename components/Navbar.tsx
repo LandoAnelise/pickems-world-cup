@@ -2,23 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { signOut } from '@/app/actions/auth'
 import { type Profile } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
 export function Navbar({ profile }: { profile: Profile }) {
-  const router = useRouter()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-
-  async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   const links = [
     { href: '/', label: 'Palpites' },
@@ -52,7 +44,7 @@ export function Navbar({ profile }: { profile: Profile }) {
           <Link href="/perfil" className="text-sm text-muted-foreground hover:text-foreground transition-colors truncate max-w-[120px]" title="Editar apelido">
             {profile.display_name ?? profile.username}
           </Link>
-          <Button variant="outline" size="sm" onClick={handleLogout}>Sair</Button>
+          <form action={signOut}><Button variant="outline" size="sm" type="submit">Sair</Button></form>
         </div>
 
         {/* Mobile: apelido + hambúrguer */}
@@ -75,7 +67,7 @@ export function Navbar({ profile }: { profile: Profile }) {
             </Link>
           ))}
           <div className="pt-1 border-t mt-1">
-            <Button variant="outline" size="sm" className="w-full" onClick={handleLogout}>Sair</Button>
+            <form action={signOut}><Button variant="outline" size="sm" className="w-full" type="submit">Sair</Button></form>
           </div>
         </div>
       )}

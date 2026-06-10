@@ -1,30 +1,35 @@
 services:
-  app:
-    image: ghcr.io/${GITHUB_REPOSITORY:-pickems-copa-2026}:latest
-    build:
-      context: .
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+  pickems-copa-2026:
+    image: landoanelise/pickems-copa-2026:latest
+    pull_policy: always
+    container_name: pickems-copa-2026
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
     ports:
       - "3000:3000"
     environment:
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      CRON_SECRET: ${CRON_SECRET}
-    restart: unless-stopped
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CRON_SECRET=${CRON_SECRET}
 
   cron:
-    image: alpine:3.19
+    image: alpine:latest
+    pull_policy: always
+    container_name: pickems-copa-2026-cron
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
     depends_on:
-      - app
+      - pickems-copa-2026
     environment:
-      CRON_SECRET: ${CRON_SECRET}
+      - CRON_SECRET=${CRON_SECRET}
     command: >
       sh -c "apk add --no-cache curl &&
              while true; do
                curl -s -X POST
                     -H \"Authorization: Bearer $$CRON_SECRET\"
-                    http://app:3000/api/sync-results;
+                    http://pickems-copa-2026:3000/api/sync-results;
                sleep 120;
              done"
-    restart: unless-stopped

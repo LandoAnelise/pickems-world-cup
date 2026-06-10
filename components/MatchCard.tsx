@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { savePick } from '@/app/actions/picks'
 import { type MatchWithPick } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
 import { Card, CardContent } from '@/components/ui/card'
@@ -60,12 +60,8 @@ export function MatchCard({ match, userId, groupLabel }: Props) {
       return
     }
     startTransition(async () => {
-      const supabase = createClient()
-      const { error } = await supabase.from('picks').upsert(
-        { user_id: userId, match_id: match.id, home_score: home, away_score: away },
-        { onConflict: 'user_id,match_id' }
-      )
-      if (error) toast.error('Erro ao salvar: ' + error.message)
+      const result = await savePick(match.id, home, away)
+      if (result.error) toast.error('Erro ao salvar: ' + result.error)
       else toast.success('Palpite salvo!')
     })
   }
