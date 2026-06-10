@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { cacheGet, cacheSet } from '@/lib/cache'
+import { type Profile } from '@/lib/types'
 import { Navbar } from '@/components/Navbar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -8,11 +10,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  let { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  let profile = await cacheGet<Profile>(`profile:${user.id}`)
+  if (!profile) {
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    profile = data
+    if (profile) await cacheSet(`profile:${user.id}`, profile, 300)
+  }
 
   // Cria perfil se não existir (trigger pode não ter rodado no OAuth)
   if (!profile) {

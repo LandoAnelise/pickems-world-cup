@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cacheGet, cacheSet } from '@/lib/cache'
 import { type LeaderboardEntry } from '@/lib/types'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -11,7 +12,16 @@ export default async function LeaderboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: entries, error } = await supabase.rpc('get_leaderboard')
+  const cached = await cacheGet<LeaderboardEntry[]>('leaderboard')
+  let entries = cached
+  let error = null
+
+  if (!cached) {
+    const result = await supabase.rpc('get_leaderboard')
+    error = result.error
+    entries = result.data
+    if (entries) await cacheSet('leaderboard', entries, 120)
+  }
 
   if (error) {
     return (
