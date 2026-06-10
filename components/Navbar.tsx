@@ -20,6 +20,7 @@ export function Navbar({ profile }: { profile: Profile }) {
 
   const links = [
     { href: '/', label: 'Palpites' },
+    { href: '/chaveamento', label: 'Chaveamento' },
     { href: '/leaderboard', label: 'Ranking' },
     ...(profile.is_admin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]

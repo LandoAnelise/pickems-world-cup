@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { type MatchWithPick } from '@/lib/types'
-import { getFlagUrl } from '@/lib/flags'
+import { getFlagUrl, getTeamName } from '@/lib/flags'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -27,22 +27,26 @@ function isLocked(matchDate: string): boolean {
 
 function TeamFlag({ name }: { name: string }) {
   const url = getFlagUrl(name)
-  if (!url) return <div className="w-10 h-7 bg-muted rounded" />
   return (
-    <Image
-      src={url}
-      alt={name}
-      width={40}
-      height={27}
-      className="rounded object-contain"
-      unoptimized
-    />
+    <div className="relative w-10 h-7 shrink-0">
+      {url ? (
+        <Image
+          src={url}
+          alt={name}
+          fill
+          className="object-contain rounded"
+          unoptimized
+        />
+      ) : (
+        <div className="w-full h-full bg-muted rounded" />
+      )}
+    </div>
   )
 }
 
-type Props = { match: MatchWithPick; userId: string }
+type Props = { match: MatchWithPick; userId: string; groupLabel?: string }
 
-export function MatchCard({ match, userId }: Props) {
+export function MatchCard({ match, userId, groupLabel }: Props) {
   const locked = isLocked(match.match_date) || match.status !== 'scheduled'
   const [homeScore, setHomeScore] = useState(match.pick?.home_score?.toString() ?? '')
   const [awayScore, setAwayScore] = useState(match.pick?.away_score?.toString() ?? '')
@@ -75,6 +79,7 @@ export function MatchCard({ match, userId }: Props) {
       <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 text-xs text-muted-foreground border-b">
         <span>{formatDate(match.match_date)}</span>
         <div className="flex items-center gap-1.5">
+          {groupLabel && <span className="font-medium text-foreground">{groupLabel}</span>}
           {match.status === 'live' && (
             <Badge variant="destructive" className="text-[10px] px-1.5 py-0 animate-pulse">AO VIVO</Badge>
           )}
@@ -94,7 +99,7 @@ export function MatchCard({ match, userId }: Props) {
           {/* Time da casa */}
           <div className="flex flex-col items-center gap-1.5 text-center">
             <TeamFlag name={match.home_team} />
-            <span className="text-xs font-medium leading-tight">{match.home_team}</span>
+            <span className="text-xs font-medium leading-tight line-clamp-2 w-full h-8 flex items-center justify-center">{getTeamName(match.home_team)}</span>
           </div>
 
           {/* Placar */}
@@ -136,7 +141,7 @@ export function MatchCard({ match, userId }: Props) {
           {/* Time visitante */}
           <div className="flex flex-col items-center gap-1.5 text-center">
             <TeamFlag name={match.away_team} />
-            <span className="text-xs font-medium leading-tight">{match.away_team}</span>
+            <span className="text-xs font-medium leading-tight line-clamp-2 w-full h-8 flex items-center justify-center">{getTeamName(match.away_team)}</span>
           </div>
         </div>
 

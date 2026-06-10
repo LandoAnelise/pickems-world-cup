@@ -55,3 +55,58 @@ export function getFlagUrl(teamName: string): string {
   if (!code) return ''
   return `https://flagcdn.com/w40/${code}.png`
 }
+
+const TEAM_NAMES_PT: Record<string, string> = {
+  Algeria: 'Argélia',
+  Argentina: 'Argentina',
+  Australia: 'Austrália',
+  Austria: 'Áustria',
+  Belgium: 'Bélgica',
+  'Bosnia and Herzegovina': 'Bósnia e Herz.',
+  Brazil: 'Brasil',
+  Canada: 'Canadá',
+  'Cape Verde': 'Cabo Verde',
+  Colombia: 'Colômbia',
+  Croatia: 'Croácia',
+  'Curaçao': 'Curaçao',
+  'Czech Republic': 'Rep. Tcheca',
+  'Democratic Republic of the Congo': 'Rep. D. Congo',
+  Ecuador: 'Equador',
+  Egypt: 'Egito',
+  England: 'Inglaterra',
+  France: 'França',
+  Germany: 'Alemanha',
+  Ghana: 'Gana',
+  Haiti: 'Haiti',
+  Iran: 'Irã',
+  Iraq: 'Iraque',
+  'Ivory Coast': 'Costa do Marfim',
+  Japan: 'Japão',
+  Jordan: 'Jordânia',
+  Mexico: 'México',
+  Morocco: 'Marrocos',
+  Netherlands: 'Holanda',
+  'New Zealand': 'Nova Zelândia',
+  Norway: 'Noruega',
+  Panama: 'Panamá',
+  Paraguay: 'Paraguai',
+  Portugal: 'Portugal',
+  Qatar: 'Catar',
+  'Saudi Arabia': 'Arábia Saudita',
+  Scotland: 'Escócia',
+  Senegal: 'Senegal',
+  'South Africa': 'África do Sul',
+  'South Korea': 'Coreia do Sul',
+  Spain: 'Espanha',
+  Sweden: 'Suécia',
+  Switzerland: 'Suíça',
+  Tunisia: 'Tunísia',
+  Turkey: 'Turquia',
+  'United States': 'Estados Unidos',
+  Uruguay: 'Uruguai',
+  Uzbekistan: 'Uzbequistão',
+}
+
+export function getTeamName(teamName: string): string {
+  return TEAM_NAMES_PT[teamName] ?? teamName
+}

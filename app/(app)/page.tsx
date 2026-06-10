@@ -1,6 +1,10 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { type Match, type Pick, type MatchWithPick } from '@/lib/types'
 import { MatchCard } from '@/components/MatchCard'
+import { PicksFilterTabs } from '@/components/PicksFilterTabs'
+import { GroupSection } from '@/components/GroupSection'
+import { DaySection } from '@/components/DaySection'
 
 const STAGE_LABELS: Record<string, string> = {
   group: 'Fase de Grupos',
@@ -14,7 +18,31 @@ const STAGE_LABELS: Record<string, string> = {
 
 const STAGE_ORDER = ['group', 'r32', 'r16', 'qf', 'sf', 'final', 'third']
 
-export default async function DashboardPage() {
+function getDayKey(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit',
+  })
+}
+
+function getDayLabel(dateStr: string) {
+  const weekday = new Date(dateStr).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', weekday: 'long',
+  })
+  const day = getDayKey(dateStr)
+  return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)}, ${day}`
+}
+
+type Filter = 'upcoming' | 'finished' | 'all'
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>
+}) {
+  const { filter: rawFilter } = await searchParams
+  const filter: Filter =
+    rawFilter === 'finished' || rawFilter === 'all' ? rawFilter : 'upcoming'
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -27,14 +55,20 @@ export default async function DashboardPage() {
     (picks ?? []).map((p: Pick) => [p.match_id, p])
   )
 
-  const matchesWithPicks: MatchWithPick[] = (matches ?? []).map((m: Match) => ({
+  const allMatches: MatchWithPick[] = (matches ?? []).map((m: Match) => ({
     ...m,
     pick: picksMap.get(m.id),
   }))
 
+  const filtered = allMatches.filter((m) => {
+    if (filter === 'finished') return m.status === 'finished'
+    if (filter === 'upcoming') return m.status !== 'finished'
+    return true
+  })
+
   // Agrupar por stage e, dentro de 'group', por group_name
   const byStage = new Map<string, Map<string, MatchWithPick[]>>()
-  for (const m of matchesWithPicks) {
+  for (const m of filtered) {
     if (!byStage.has(m.stage)) byStage.set(m.stage, new Map())
     const key = m.stage === 'group' ? (m.group_name ?? 'X') : 'main'
     const stageMap = byStage.get(m.stage)!
@@ -42,21 +76,14 @@ export default async function DashboardPage() {
     stageMap.get(key)!.push(m)
   }
 
-  if (matchesWithPicks.length === 0) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p className="text-4xl mb-4">⚽</p>
-        <p className="text-lg font-medium">Nenhum jogo carregado ainda.</p>
-        <p className="text-sm mt-1">
-          Um admin precisa importar os jogos na página{' '}
-          <span className="font-mono bg-muted px-1 rounded">Admin → Importar jogos</span>.
-        </p>
-      </div>
-    )
+  const emptyMessages: Record<Filter, string> = {
+    upcoming: 'Nenhum jogo pendente. Todos os jogos já foram concluídos!',
+    finished: 'Nenhum jogo concluído ainda.',
+    all: 'Nenhum jogo carregado ainda. Um admin precisa importar os jogos.',
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Seus Palpites</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -64,40 +91,68 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => (
-        <section key={stage}>
-          <h2 className="text-lg font-semibold mb-4 pb-2 border-b">
-            {STAGE_LABELS[stage] ?? stage}
-          </h2>
+      <Suspense>
+        <PicksFilterTabs />
+      </Suspense>
 
-          {stage === 'group' ? (
-            <div className="space-y-6">
-              {Array.from(byStage.get(stage)!.entries())
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([groupName, groupMatches]) => (
-                  <div key={groupName}>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                      Grupo {groupName}
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {groupMatches.map((m) => (
-                        <MatchCard key={m.id} match={m} userId={user!.id} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from(byStage.get(stage)!.values())
-                .flat()
-                .map((m) => (
-                  <MatchCard key={m.id} match={m} userId={user!.id} />
-                ))}
-            </div>
-          )}
-        </section>
-      ))}
+      {filtered.length === 0 ? (
+        <div className="text-center py-20 text-muted-foreground">
+          <p className="text-4xl mb-4">⚽</p>
+          <p>{emptyMessages[filter]}</p>
+        </div>
+      ) : filter === 'upcoming' ? (
+        <div className="space-y-6">
+          {(() => {
+            const byDay = new Map<string, MatchWithPick[]>()
+            for (const m of filtered) {
+              const key = getDayKey(m.match_date)
+              if (!byDay.has(key)) byDay.set(key, [])
+              byDay.get(key)!.push(m)
+            }
+            return Array.from(byDay.entries()).map(([key, dayMatches]) => (
+              <DaySection
+                key={key}
+                label={getDayLabel(dayMatches[0].match_date)}
+                matches={dayMatches}
+                userId={user!.id}
+              />
+            ))
+          })()}
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => (
+            <section key={stage}>
+              <h2 className="text-lg font-semibold mb-4 pb-2 border-b">
+                {STAGE_LABELS[stage] ?? stage}
+              </h2>
+
+              {stage === 'group' ? (
+                <div className="space-y-6">
+                  {Array.from(byStage.get(stage)!.entries())
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([groupName, groupMatches]) => (
+                      <GroupSection
+                        key={groupName}
+                        groupName={groupName}
+                        matches={groupMatches}
+                        userId={user!.id}
+                      />
+                    ))}
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from(byStage.get(stage)!.values())
+                    .flat()
+                    .map((m) => (
+                      <MatchCard key={m.id} match={m} userId={user!.id} />
+                    ))}
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
