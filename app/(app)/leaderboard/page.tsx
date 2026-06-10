@@ -50,7 +50,7 @@ export default async function LeaderboardPage() {
       ) : (
         <>
         <p className="text-xs text-muted-foreground sm:hidden mb-2">
-          P. = Palpites | V. = Time vencedor | E. = Placar exato | Pts = Pontos
+          P. = Palpites | D. = Desfecho correto | E. = Placar exato | Pts = Pontos
         </p>
         <div className="rounded-lg border overflow-hidden">
           <Table>
@@ -63,8 +63,8 @@ export default async function LeaderboardPage() {
                   <span className="sm:hidden">P.</span>
                 </TableHead>
                 <TableHead className="text-center px-2">
-                  <span className="hidden sm:inline">Time vencedor</span>
-                  <span className="sm:hidden">V.</span>
+                  <span className="hidden sm:inline">Desfecho correto</span>
+                  <span className="sm:hidden">D.</span>
                 </TableHead>
                 <TableHead className="text-center px-2">
                   <span className="hidden sm:inline">Placar exato</span>
