@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s https://worldcup26.ir/get/games -o games.json)",
+      "Bash(node -e \"const j=require\\('./games.json'\\);console.log\\('Total games:',j.games.length\\);const finished=j.games.filter\\(g=>g.finished==='TRUE'\\);console.log\\('Finished games:',finished.length\\);if\\(finished.length>0\\)console.log\\('Finished sample:',JSON.stringify\\(finished[0],null,2\\)\\)\")"
+    ]
+  }
+}
