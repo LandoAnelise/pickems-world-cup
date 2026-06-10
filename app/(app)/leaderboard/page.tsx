@@ -50,7 +50,7 @@ export default async function LeaderboardPage() {
       ) : (
         <>
         <p className="text-xs text-muted-foreground sm:hidden mb-2">
-          V. = Time vencedor | E. = Placar exato | Pts = Pontos
+          P. = Palpites | V. = Time vencedor | E. = Placar exato | Pts = Pontos
         </p>
         <div className="rounded-lg border overflow-hidden">
           <Table>
@@ -58,7 +58,10 @@ export default async function LeaderboardPage() {
               <TableRow>
                 <TableHead className="w-8 px-2">#</TableHead>
                 <TableHead>Participante</TableHead>
-                <TableHead className="text-center hidden sm:table-cell">Palpites</TableHead>
+                <TableHead className="text-center px-2">
+                  <span className="hidden sm:inline">Palpites</span>
+                  <span className="sm:hidden">P.</span>
+                </TableHead>
                 <TableHead className="text-center px-2">
                   <span className="hidden sm:inline">Time vencedor</span>
                   <span className="sm:hidden">V.</span>
@@ -87,7 +90,7 @@ export default async function LeaderboardPage() {
                         <Badge variant="outline" className="ml-1.5 text-[10px] px-1 py-0">você</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground text-sm hidden sm:table-cell">
+                    <TableCell className="text-center text-muted-foreground text-sm px-2">
                       {Number(entry.picks_count)}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-sm px-2">
