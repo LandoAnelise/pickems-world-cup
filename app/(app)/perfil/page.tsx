@@ -34,6 +34,10 @@ export default function PerfilPage() {
       toast.error('O apelido não pode ficar em branco.')
       return
     }
+    if (name.length > 10) {
+      toast.error('O apelido deve ter no máximo 10 caracteres.')
+      return
+    }
     setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -68,7 +72,7 @@ export default function PerfilPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Seu apelido no ranking"
-                maxLength={30}
+                maxLength={10}
                 autoFocus
               />
             </div>

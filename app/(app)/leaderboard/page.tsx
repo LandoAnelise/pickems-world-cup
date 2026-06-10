@@ -38,16 +38,26 @@ export default async function LeaderboardPage() {
           <p>Nenhum palpite feito ainda. Seja o primeiro!</p>
         </div>
       ) : (
+        <>
+        <p className="text-xs text-muted-foreground sm:hidden mb-2">
+          V. = Time vencedor | E. = Placar exato | Pts = Pontos
+        </p>
         <div className="rounded-lg border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">#</TableHead>
+                <TableHead className="w-8 px-2">#</TableHead>
                 <TableHead>Participante</TableHead>
-                <TableHead className="text-center">Palpites</TableHead>
-                <TableHead className="text-center">Vencedor certo</TableHead>
-                <TableHead className="text-center">Placar exato</TableHead>
-                <TableHead className="text-right">Pontos</TableHead>
+                <TableHead className="text-center hidden sm:table-cell">Palpites</TableHead>
+                <TableHead className="text-center px-2">
+                  <span className="hidden sm:inline">Time vencedor</span>
+                  <span className="sm:hidden">V.</span>
+                </TableHead>
+                <TableHead className="text-center px-2">
+                  <span className="hidden sm:inline">Placar exato</span>
+                  <span className="sm:hidden">E.</span>
+                </TableHead>
+                <TableHead className="text-right px-2">Pts</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -58,26 +68,26 @@ export default async function LeaderboardPage() {
                     key={entry.user_id}
                     className={isCurrentUser ? 'bg-primary/5 font-semibold' : ''}
                   >
-                    <TableCell className="text-center">
-                      {MEDALS[i] ?? <span className="text-muted-foreground">{i + 1}</span>}
+                    <TableCell className="text-center px-2">
+                      {MEDALS[i] ?? <span className="text-muted-foreground text-sm">{i + 1}</span>}
                     </TableCell>
-                    <TableCell>
-                      <span>{entry.display_name ?? entry.username}</span>
+                    <TableCell className="py-2">
+                      <span className="text-sm">{entry.display_name ?? entry.username}</span>
                       {isCurrentUser && (
-                        <Badge variant="outline" className="ml-2 text-xs">você</Badge>
+                        <Badge variant="outline" className="ml-1.5 text-[10px] px-1 py-0">você</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground text-sm hidden sm:table-cell">
                       {Number(entry.picks_count)}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground text-sm px-2">
                       {Number(entry.correct_winners)}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground text-sm px-2">
                       {Number(entry.exact_scores)} ⭐
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-lg font-bold tabular-nums">
+                    <TableCell className="text-right px-2">
+                      <span className="text-base font-bold tabular-nums">
                         {Number(entry.total_points)}
                       </span>
                     </TableCell>
@@ -87,6 +97,7 @@ export default async function LeaderboardPage() {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
     </div>
   )
