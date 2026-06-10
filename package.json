@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "download-flags": "node scripts/download-flags.mjs",
+    "prebuild": "node scripts/download-flags.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

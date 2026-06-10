@@ -53,7 +53,7 @@ const TEAM_CODES: Record<string, string> = {
 export function getFlagUrl(teamName: string): string {
   const code = TEAM_CODES[teamName]
   if (!code) return ''
-  return `https://flagcdn.com/w40/${code}.png`
+  return `/flags/${code}.png`
 }
 
 const TEAM_NAMES_PT: Record<string, string> = {

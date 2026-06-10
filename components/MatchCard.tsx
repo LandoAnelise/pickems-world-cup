@@ -35,7 +35,6 @@ function TeamFlag({ name }: { name: string }) {
           alt={name}
           fill
           className="object-contain rounded"
-          unoptimized
         />
       ) : (
         <div className="w-full h-full bg-muted rounded" />

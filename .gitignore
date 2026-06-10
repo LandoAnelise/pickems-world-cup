@@ -20,6 +20,9 @@
 # production
 /build
 
+# flags baixadas no build
+/public/flags
+
 # misc
 .DS_Store
 *.pem
