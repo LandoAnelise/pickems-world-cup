@@ -1,12 +1,12 @@
 # Etapa 1: instalar dependências
-FROM node:20-alpine AS deps
+FROM node:lts-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # Etapa 2: build
-FROM node:20-alpine AS builder
+FROM node:lts-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Etapa 3: imagem de produção mínima
-FROM node:20-alpine AS runner
+FROM node:lts-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

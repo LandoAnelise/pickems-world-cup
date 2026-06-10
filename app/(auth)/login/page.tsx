@@ -4,11 +4,12 @@ import { Suspense, useActionState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { signInWithEmail } from '@/app/actions/auth'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -39,11 +40,9 @@ function LoginForm() {
           </p>
         )}
 
-        <Button asChild variant="outline" className="w-full">
-          <Link href="/api/auth/google">
-            <GoogleIcon />Entrar com Google
-          </Link>
-        </Button>
+        <a href="/api/auth/google" className={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-center')}>
+          <GoogleIcon />Entrar com Google
+        </a>
 
         <div className="flex items-center gap-3">
           <Separator className="flex-1" />
