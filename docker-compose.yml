@@ -1,4 +1,13 @@
 services:
+  redis:
+    image: redis:alpine
+    pull_policy: always
+    container_name: pickems-copa-2026-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+
   pickems-copa-2026:
     image: landoanelise/pickems-copa-2026:latest
     pull_policy: always
@@ -8,7 +17,10 @@ services:
     stdin_open: true
     ports:
       - "3000:3000"
+    depends_on:
+      - redis
     environment:
+      - REDIS_URL=redis://redis:6379
       - SITE_URL=${SITE_URL}
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
@@ -26,3 +38,6 @@ services:
       - APP_URL=http://pickems-copa-2026:3000
       - CRON_SECRET=${CRON_SECRET}
     entrypoint: /cron.sh
+
+volumes:
+  redis_data:

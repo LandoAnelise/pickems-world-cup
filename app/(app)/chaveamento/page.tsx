@@ -1,5 +1,5 @@
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
+import { cacheGet, cacheSet } from '@/lib/cache'
 import { type Match } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
 
@@ -28,7 +28,7 @@ function TeamRow({
       }`}
     >
       {flagUrl ? (
-        <Image src={flagUrl} alt={team} width={20} height={14} unoptimized className="rounded object-contain shrink-0" />
+        <img src={flagUrl} alt={team} className="w-5 h-3.5 rounded object-contain shrink-0" />
       ) : (
         <div className="w-5 h-3.5 bg-muted rounded shrink-0" />
       )}
@@ -57,11 +57,16 @@ function BracketMatch({ match }: { match: Match }) {
 
 export default async function ChaveamentoPage() {
   const supabase = await createClient()
-  const { data: matches } = await supabase
-    .from('matches')
-    .select('*')
-    .neq('stage', 'group')
-    .order('match_date', { ascending: true })
+  let matches = await cacheGet<Match[]>('matches:bracket')
+  if (!matches) {
+    const { data } = await supabase
+      .from('matches')
+      .select('*')
+      .neq('stage', 'group')
+      .order('match_date', { ascending: true })
+    matches = data ?? []
+    if (matches.length) await cacheSet('matches:bracket', matches, 120)
+  }
 
   if (!matches || matches.length === 0) {
     return (

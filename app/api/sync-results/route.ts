@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { fetchAllGames } from '@/lib/worldcup-api'
 import { calcPoints } from '@/lib/scoring'
+import { cacheDel, cacheDelPattern } from '@/lib/cache'
 
 export async function POST(request: Request) {
   if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
       await supabase.from('picks').update({ points }).eq('id', pick.id)
       updatedPicks++
     }
+  }
+
+  if (updatedMatches > 0) {
+    await Promise.all([
+      cacheDel('matches:all', 'matches:bracket', 'leaderboard'),
+      cacheDelPattern('picks:*'),
+    ])
   }
 
   return NextResponse.json({ updatedMatches, updatedPicks })

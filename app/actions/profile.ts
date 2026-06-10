@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { cacheDel } from '@/lib/cache'
 
 export async function getProfile() {
   const supabase = await createClient()
@@ -34,6 +35,7 @@ export async function updateDisplayName(_: unknown, formData: FormData) {
 
   if (error) return { error: error.message }
 
+  await cacheDel(`profile:${user.id}`, 'leaderboard')
   revalidatePath('/perfil')
   revalidatePath('/', 'layout')
   return { success: true }

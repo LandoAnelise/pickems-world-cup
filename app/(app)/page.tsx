@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { cacheGet, cacheSet } from '@/lib/cache'
 import { type Match, type Pick, type MatchWithPick } from '@/lib/types'
 import { MatchCard } from '@/components/MatchCard'
 import { PicksFilterTabs } from '@/components/PicksFilterTabs'
@@ -46,16 +47,26 @@ export default async function DashboardPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: matches }, { data: picks }] = await Promise.all([
-    supabase.from('matches').select('*').order('match_date', { ascending: true }),
-    supabase.from('picks').select('*').eq('user_id', user!.id),
+  const [matches, picks] = await Promise.all([
+    cacheGet<Match[]>('matches:all').then(async (cached) => {
+      if (cached) return cached
+      const { data } = await supabase.from('matches').select('*').order('match_date', { ascending: true })
+      if (data) await cacheSet('matches:all', data, 120)
+      return data ?? []
+    }),
+    cacheGet<Pick[]>(`picks:${user!.id}`).then(async (cached) => {
+      if (cached) return cached
+      const { data } = await supabase.from('picks').select('*').eq('user_id', user!.id)
+      if (data) await cacheSet(`picks:${user!.id}`, data, 300)
+      return data ?? []
+    }),
   ])
 
   const picksMap = new Map<string, Pick>(
-    (picks ?? []).map((p: Pick) => [p.match_id, p])
+    picks.map((p: Pick) => [p.match_id, p])
   )
 
-  const allMatches: MatchWithPick[] = (matches ?? []).map((m: Match) => ({
+  const allMatches: MatchWithPick[] = matches.map((m: Match) => ({
     ...m,
     pick: picksMap.get(m.id),
   }))

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cacheGet, cacheSet } from '@/lib/cache'
 import { type LeaderboardEntry } from '@/lib/types'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -11,7 +12,16 @@ export default async function LeaderboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: entries, error } = await supabase.rpc('get_leaderboard')
+  const cached = await cacheGet<LeaderboardEntry[]>('leaderboard')
+  let entries = cached
+  let error = null
+
+  if (!cached) {
+    const result = await supabase.rpc('get_leaderboard')
+    error = result.error
+    entries = result.data
+    if (entries) await cacheSet('leaderboard', entries, 120)
+  }
 
   if (error) {
     return (
@@ -40,7 +50,7 @@ export default async function LeaderboardPage() {
       ) : (
         <>
         <p className="text-xs text-muted-foreground sm:hidden mb-2">
-          V. = Time vencedor | E. = Placar exato | Pts = Pontos
+          P. = Palpites | D. = Desfecho correto | E. = Placar exato | Pts = Pontos
         </p>
         <div className="rounded-lg border overflow-hidden">
           <Table>
@@ -48,10 +58,13 @@ export default async function LeaderboardPage() {
               <TableRow>
                 <TableHead className="w-8 px-2">#</TableHead>
                 <TableHead>Participante</TableHead>
-                <TableHead className="text-center hidden sm:table-cell">Palpites</TableHead>
                 <TableHead className="text-center px-2">
-                  <span className="hidden sm:inline">Time vencedor</span>
-                  <span className="sm:hidden">V.</span>
+                  <span className="hidden sm:inline">Palpites</span>
+                  <span className="sm:hidden">P.</span>
+                </TableHead>
+                <TableHead className="text-center px-2">
+                  <span className="hidden sm:inline">Desfecho correto</span>
+                  <span className="sm:hidden">D.</span>
                 </TableHead>
                 <TableHead className="text-center px-2">
                   <span className="hidden sm:inline">Placar exato</span>
@@ -77,7 +90,7 @@ export default async function LeaderboardPage() {
                         <Badge variant="outline" className="ml-1.5 text-[10px] px-1 py-0">você</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground text-sm hidden sm:table-cell">
+                    <TableCell className="text-center text-muted-foreground text-sm px-2">
                       {Number(entry.picks_count)}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-sm px-2">

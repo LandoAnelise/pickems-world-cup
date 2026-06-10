@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { cacheDel } from '@/lib/cache'
 
 export async function savePick(matchId: string, homeScore: number, awayScore: number) {
   const supabase = await createClient()
@@ -13,5 +14,7 @@ export async function savePick(matchId: string, homeScore: number, awayScore: nu
   )
 
   if (error) return { error: error.message }
+
+  await cacheDel(`picks:${user.id}`, 'leaderboard')
   return { success: true }
 }
