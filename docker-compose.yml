@@ -16,21 +16,13 @@ services:
       - CRON_SECRET=${CRON_SECRET}
 
   cron:
-    image: alpine:latest
+    image: landoanelise/pickems-copa-2026:latest
     pull_policy: always
     container_name: pickems-copa-2026-cron
     restart: unless-stopped
-    tty: true
-    stdin_open: true
     depends_on:
       - pickems-copa-2026
     environment:
+      - APP_URL=http://pickems-copa-2026:3000
       - CRON_SECRET=${CRON_SECRET}
-    command: >
-      sh -c "apk add --no-cache curl &&
-             while true; do
-               curl -s -X POST
-                    -H \"Authorization: Bearer $$CRON_SECRET\"
-                    http://pickems-copa-2026:3000/api/sync-results;
-               sleep 120;
-             done"
+    entrypoint: /cron.sh
