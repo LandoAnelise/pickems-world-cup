@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { savePick } from '@/app/actions/picks'
@@ -28,14 +27,9 @@ function isLocked(matchDate: string): boolean {
 function TeamFlag({ name }: { name: string }) {
   const url = getFlagUrl(name)
   return (
-    <div className="relative w-10 h-7 shrink-0">
+    <div className="w-10 h-7 shrink-0 flex items-center justify-center">
       {url ? (
-        <Image
-          src={url}
-          alt={name}
-          fill
-          className="object-contain rounded"
-        />
+        <img src={url} alt={name} className="max-w-full max-h-full object-contain rounded" />
       ) : (
         <div className="w-full h-full bg-muted rounded" />
       )}
