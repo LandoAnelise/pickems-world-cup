@@ -26,7 +26,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs && \
+RUN apk add --no-cache curl && \
+    addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=supercronic /usr/local/bin/supercronic /usr/local/bin/supercronic
