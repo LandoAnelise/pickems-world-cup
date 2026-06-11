@@ -24,12 +24,25 @@ type RawGame = {
   time_elapsed: string
 }
 
-// Datas no formato "MM/DD/YYYY HH:MM" — tratadas como horário do leste dos EUA (EDT, UTC-4)
-// A maioria dos jogos é nos EUA. Ajuste o offset se necessário.
-function parseMatchDate(localDate: string): string {
+// Mapeamento stadium_id → offset UTC (torneio em junho/julho 2026)
+// México aboliu DST em 2023: permanentemente em UTC-6 (CST)
+// México: Mexico City=1, Guadalajara=2, Monterrey=3
+// EUA Central (CDT = UTC-5): Dallas=4, Houston=5, Kansas City=6
+// EUA/CAN Eastern (EDT = UTC-4): Atlanta=7, Miami=8, Boston=9, Philadelphia=10, New York/NJ=11, Toronto=12
+// EUA/CAN Western (PDT = UTC-7): Vancouver=13, Seattle=14, San Francisco=15, Los Angeles=16
+const STADIUM_OFFSET: Record<string, string> = {
+  '1': '-06:00', '2': '-06:00', '3': '-06:00',
+  '4': '-05:00', '5': '-05:00', '6': '-05:00',
+  '7': '-04:00', '8': '-04:00', '9': '-04:00',
+  '10': '-04:00', '11': '-04:00', '12': '-04:00',
+  '13': '-07:00', '14': '-07:00', '15': '-07:00', '16': '-07:00',
+}
+
+function parseMatchDate(localDate: string, stadiumId: string): string {
+  const offset = STADIUM_OFFSET[stadiumId] ?? '-05:00'
   const [datePart, timePart] = localDate.split(' ')
   const [month, day, year] = datePart.split('/')
-  return new Date(`${year}-${month}-${day}T${timePart}:00-04:00`).toISOString()
+  return new Date(`${year}-${month}-${day}T${timePart}:00${offset}`).toISOString()
 }
 
 function parseStatus(game: RawGame): 'scheduled' | 'live' | 'finished' {
@@ -50,7 +63,7 @@ export async function fetchAllGames(): Promise<WCGame[]> {
     away_score: parseInt(g.away_score, 10),
     group: g.group,
     type: g.type,
-    match_date: parseMatchDate(g.local_date),
+    match_date: parseMatchDate(g.local_date, g.stadium_id),
     finished: g.finished === 'TRUE',
     status: parseStatus(g),
   }))
