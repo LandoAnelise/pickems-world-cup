@@ -17,8 +17,8 @@ RUN npm run build
 FROM alpine AS supercronic
 RUN apk add --no-cache curl && \
     curl -fsSL https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-amd64 \
-      -o /usr/local/bin/supercronic && \
-    chmod +x /usr/local/bin/supercronic
+      -o /supercronic && \
+    chmod +x /supercronic
 
 # Etapa 4: imagem de produção mínima
 FROM node:lts-alpine AS runner
@@ -30,10 +30,10 @@ RUN apk add --no-cache curl && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-COPY --from=supercronic /usr/local/bin/supercronic /usr/local/bin/supercronic
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=supercronic /supercronic /usr/local/bin/supercronic
 COPY --chmod=755 cron.sh /cron.sh
 
 USER nextjs

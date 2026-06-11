@@ -7,4 +7,4 @@ cat > /tmp/crontab << 'CRONTAB'
 CRONTAB
 
 echo "[cron] iniciando supercronic..."
-exec supercronic --quiet /tmp/crontab
+exec supercronic /tmp/crontab
