@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       away_team: g.away_team,
       match_date: g.match_date,
     })),
-    { onConflict: 'external_id', ignoreDuplicates: true, count: 'exact' }
+    { onConflict: 'external_id', ignoreDuplicates: false, count: 'exact' }
   )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
