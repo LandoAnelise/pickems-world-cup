@@ -32,6 +32,7 @@ services:
     pull_policy: always
     container_name: pickems-copa-2026-cron
     restart: unless-stopped
+    user: root
     depends_on:
       - pickems-copa-2026
     environment:
