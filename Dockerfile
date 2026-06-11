@@ -13,16 +13,23 @@ COPY . .
 
 RUN npm run build
 
-# Etapa 3: imagem de produção mínima
+# Etapa 3: baixar supercronic
+FROM alpine AS supercronic
+RUN apk add --no-cache curl && \
+    curl -fsSL https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-amd64 \
+      -o /usr/local/bin/supercronic && \
+    chmod +x /usr/local/bin/supercronic
+
+# Etapa 4: imagem de produção mínima
 FROM node:lts-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN apk add --no-cache curl && \
-    addgroup --system --gid 1001 nodejs && \
+RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+COPY --from=supercronic /usr/local/bin/supercronic /usr/local/bin/supercronic
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

@@ -1,16 +1,10 @@
 #!/bin/sh
-set -e
 
-# crond spawns jobs with a clean environment, so persist the container's
-# env vars to a file that each job sources before running.
-printenv > /tmp/cron.env
-
-# Write crontab for the running user. Add more jobs below as needed.
-mkdir -p /tmp/crontabs
-cat > /tmp/crontabs/root << 'CRONTAB'
-*/2 * * * * . /tmp/cron.env; curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" -w "\n[cron] sync-results HTTP: %{http_code}\n" "$APP_URL/api/sync-results" >> /proc/1/fd/1 2>&1
-*/30 * * * * . /tmp/cron.env; curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" -w "\n[cron] sync-fixtures HTTP: %{http_code}\n" "$APP_URL/api/sync-fixtures" >> /proc/1/fd/1 2>&1
+# supercronic inherits the container environment, so no need to persist/source env vars.
+cat > /tmp/crontab << 'CRONTAB'
+*/2 * * * * curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" -w "\n[cron] sync-results HTTP: %{http_code}\n" "$APP_URL/api/sync-results"
+*/30 * * * * curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" -w "\n[cron] sync-fixtures HTTP: %{http_code}\n" "$APP_URL/api/sync-fixtures"
 CRONTAB
 
-echo "[cron] iniciando crond"
-exec crond -f -l 0 -c /tmp/crontabs >/dev/null 2>&1
+echo "[cron] iniciando supercronic..."
+exec supercronic /tmp/crontab
