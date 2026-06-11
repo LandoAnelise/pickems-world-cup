@@ -9,7 +9,6 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 export const metadata: Metadata = {
   title: "Pick'ems CDC Copa 2026",
   description: 'Faça seus palpites da Copa do Mundo 2026',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
