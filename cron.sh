@@ -13,4 +13,4 @@ cat > /tmp/crontabs/root << 'CRONTAB'
 CRONTAB
 
 echo "[cron] iniciando crond"
-exec crond -f -l 0 -c /tmp/crontabs
+exec crond -f -l 0 -c /tmp/crontabs >/dev/null 2>&1
