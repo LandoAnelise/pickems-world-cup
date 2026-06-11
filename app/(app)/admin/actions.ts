@@ -41,7 +41,7 @@ export async function syncFixtures(): Promise<{ imported: number; error?: string
       away_team: g.away_team,
       match_date: g.match_date,
     })),
-    { onConflict: 'external_id', ignoreDuplicates: true }
+    { onConflict: 'external_id', ignoreDuplicates: false }
   )
 
   if (error) return { imported: 0, error: error.message }

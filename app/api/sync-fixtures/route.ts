@@ -8,7 +8,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient()
-  const games = await fetchAllGames()
+  let games
+  try {
+    games = await fetchAllGames()
+  } catch (err) {
+    console.error('[sync-fixtures] failed to fetch games:', err)
+    return NextResponse.json({ error: 'upstream API unavailable' }, { status: 503 })
+  }
 
   // Importa apenas jogos com times já definidos (fases eliminatórias podem ter TBD)
   const readyGames = games.filter((g) => g.home_team && g.away_team)

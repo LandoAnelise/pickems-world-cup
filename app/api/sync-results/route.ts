@@ -10,7 +10,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient()
-  const games = await fetchAllGames()
+  let games
+  try {
+    games = await fetchAllGames()
+  } catch (err) {
+    console.error('[sync-results] failed to fetch games:', err)
+    return NextResponse.json({ error: 'upstream API unavailable' }, { status: 503 })
+  }
   const finishedGames = games.filter((g) => g.finished)
 
   let updatedMatches = 0

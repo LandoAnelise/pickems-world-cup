@@ -1,13 +1,10 @@
 #!/bin/sh
-set -e
 
-echo "[cron] iniciando sync a cada 120s → $APP_URL"
+# supercronic inherits the container environment, so no need to persist/source env vars.
+cat > /tmp/crontab << 'CRONTAB'
+*/2 * * * * curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" -w "\n[cron] sync-results HTTP: %{http_code}\n" "$APP_URL/api/sync-results"
+*/30 * * * * curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" -w "\n[cron] sync-fixtures HTTP: %{http_code}\n" "$APP_URL/api/sync-fixtures"
+CRONTAB
 
-while true; do
-  echo "[cron] $(date '+%Y-%m-%d %H:%M:%S') sincronizando..."
-  curl -sS -X POST \
-    -H "Authorization: Bearer $CRON_SECRET" \
-    -w "\n[cron] status HTTP: %{http_code}\n" \
-    "$APP_URL/api/sync-results"
-  sleep 120
-done
+echo "[cron] iniciando supercronic..."
+exec supercronic /tmp/crontab
