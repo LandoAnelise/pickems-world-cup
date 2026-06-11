@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { getSupabaseWithUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
 import { type Profile } from '@/lib/types'
 import { Navbar } from '@/components/Navbar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getSupabaseWithUser()
 
   if (!user) redirect('/login')
 

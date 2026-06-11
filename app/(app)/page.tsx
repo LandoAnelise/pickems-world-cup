@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { requireSupabaseUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
 import { type Match, type Pick, type MatchWithPick } from '@/lib/types'
 import { MatchCard } from '@/components/MatchCard'
@@ -44,8 +44,7 @@ export default async function DashboardPage({
   const filter: Filter =
     rawFilter === 'finished' || rawFilter === 'all' ? rawFilter : 'upcoming'
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await requireSupabaseUser()
 
   const [matches, picks] = await Promise.all([
     cacheGet<Match[]>('matches:all').then(async (cached) => {
@@ -56,8 +55,8 @@ export default async function DashboardPage({
     }),
     cacheGet<Pick[]>(`picks:${user!.id}`).then(async (cached) => {
       if (cached) return cached
-      const { data } = await supabase.from('picks').select('*').eq('user_id', user!.id)
-      if (data) await cacheSet(`picks:${user!.id}`, data, 300)
+      const { data } = await supabase.from('picks').select('*').eq('user_id', user.id)
+      if (data) await cacheSet(`picks:${user.id}`, data, 300)
       return data ?? []
     }),
   ])
@@ -125,7 +124,7 @@ export default async function DashboardPage({
                 key={key}
                 label={getDayLabel(dayMatches[0].match_date)}
                 matches={dayMatches}
-                userId={user!.id}
+                userId={user.id}
               />
             ))
           })()}
@@ -147,7 +146,7 @@ export default async function DashboardPage({
                         key={groupName}
                         groupName={groupName}
                         matches={groupMatches}
-                        userId={user!.id}
+                        userId={user.id}
                       />
                     ))}
                 </div>
@@ -156,7 +155,7 @@ export default async function DashboardPage({
                   {Array.from(byStage.get(stage)!.values())
                     .flat()
                     .map((m) => (
-                      <MatchCard key={m.id} match={m} userId={user!.id} />
+                      <MatchCard key={m.id} match={m} userId={user.id} />
                     ))}
                 </div>
               )}

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireSupabaseUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
 import { type LeaderboardEntry } from '@/lib/types'
 import {
@@ -9,8 +9,7 @@ import { Badge } from '@/components/ui/badge'
 const MEDALS = ['🥇', '🥈', '🥉']
 
 export default async function LeaderboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await requireSupabaseUser()
 
   const cached = await cacheGet<LeaderboardEntry[]>('leaderboard')
   let entries = cached

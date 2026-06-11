@@ -1,15 +1,14 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSupabaseUser } from '@/lib/supabase/auth'
 import { AdminPanel } from './AdminPanel'
 
 export default async function AdminPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await requireSupabaseUser()
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('is_admin')
-    .eq('id', user!.id)
+    .eq('id', user.id)
     .single()
 
   if (!profile?.is_admin) redirect('/')

@@ -1,12 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { getSupabaseWithUser } from '@/lib/supabase/auth'
 import { cacheDel } from '@/lib/cache'
 
 export async function getProfile() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getSupabaseWithUser()
   if (!user) return null
 
   const { data } = await supabase
@@ -24,8 +23,7 @@ export async function updateDisplayName(_: unknown, formData: FormData) {
   if (!name) return { error: 'O apelido não pode ficar em branco.' }
   if (name.length > 10) return { error: 'O apelido deve ter no máximo 10 caracteres.' }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getSupabaseWithUser()
   if (!user) return { error: 'Não autenticado.' }
 
   const { error } = await supabase
