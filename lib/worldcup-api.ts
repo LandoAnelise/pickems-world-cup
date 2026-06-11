@@ -20,6 +20,7 @@ type RawGame = {
   group: string
   type: string
   local_date: string
+  stadium_id: string
   finished: string
   time_elapsed: string
 }
