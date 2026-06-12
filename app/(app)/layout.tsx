@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getSupabaseWithUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { logPerf, nowMs } from '@/lib/logger'
 import { type Profile } from '@/lib/types'
 import { Navbar } from '@/components/Navbar'
 
@@ -10,8 +11,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
+  const profileStartedAt = nowMs()
+  let profileSource = 'cache'
   let profile = await cacheGet<Profile>(`profile:${user.id}`)
+
   if (!profile) {
+    profileSource = 'db'
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     profile = data
     if (profile) await cacheSet(`profile:${user.id}`, profile, 300)
@@ -38,11 +43,27 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .single()
 
     if (error) console.error('[layout] profile create error:', error.message)
-    if (!created) redirect('/login')
+    if (!created) {
+      logPerf('layout', 'profile', nowMs() - profileStartedAt, {
+        source: 'create-failed',
+      })
+      redirect('/login')
+    }
+
+    profileSource = 'created'
     profile = created!
   }
 
-  if (!profile) redirect('/login')
+  if (!profile) {
+    logPerf('layout', 'profile', nowMs() - profileStartedAt, {
+      source: 'missing',
+    })
+    redirect('/login')
+  }
+
+  logPerf('layout', 'profile', nowMs() - profileStartedAt, {
+    source: profileSource,
+  })
 
   return (
     <div className="min-h-screen flex flex-col">
