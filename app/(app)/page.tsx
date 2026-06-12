@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { requireSupabaseUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { logPerf, nowMs } from '@/lib/logger'
 import { type Match, type Pick, type MatchWithPick } from '@/lib/types'
 import { MatchCard } from '@/components/MatchCard'
 import { PicksFilterTabs } from '@/components/PicksFilterTabs'
@@ -44,23 +45,59 @@ export default async function DashboardPage({
   const filter: Filter =
     rawFilter === 'finished' || rawFilter === 'all' ? rawFilter : 'upcoming'
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await requireSupabaseUser()
+  const dataLoadStartedAt = nowMs()
 
   const [matches, picks] = await Promise.all([
     cacheGet<Match[]>('matches:all').then(async (cached) => {
-      if (cached) return cached
+      const matchesStartedAt = nowMs()
+
+      if (cached) {
+        logPerf('page:dashboard', 'matches', nowMs() - matchesStartedAt, {
+          source: 'cache',
+          count: cached.length,
+        })
+        return cached
+      }
+
       const { data } = await supabase.from('matches').select('*').order('match_date', { ascending: true })
       if (data) await cacheSet('matches:all', data, 120)
+
+      logPerf('page:dashboard', 'matches', nowMs() - matchesStartedAt, {
+        source: 'db',
+        count: data?.length ?? 0,
+      })
+
       return data ?? []
     }),
-    cacheGet<Pick[]>(`picks:${user!.id}`).then(async (cached) => {
-      if (cached) return cached
-      const { data } = await supabase.from('picks').select('*').eq('user_id', user!.id)
-      if (data) await cacheSet(`picks:${user!.id}`, data, 300)
+    cacheGet<Pick[]>(`picks:${user.id}`).then(async (cached) => {
+      const picksStartedAt = nowMs()
+
+      if (cached) {
+        logPerf('page:dashboard', 'picks', nowMs() - picksStartedAt, {
+          source: 'cache',
+          count: cached.length,
+        })
+        return cached
+      }
+
+      const { data } = await supabase.from('picks').select('*').eq('user_id', user.id)
+      if (data) await cacheSet(`picks:${user.id}`, data, 300)
+
+      logPerf('page:dashboard', 'picks', nowMs() - picksStartedAt, {
+        source: 'db',
+        count: data?.length ?? 0,
+      })
+
       return data ?? []
     }),
   ])
+
+  logPerf('page:dashboard', 'data-load', nowMs() - dataLoadStartedAt, {
+    filter,
+    matchesCount: matches.length,
+    picksCount: picks.length,
+  })
 
   const picksMap = new Map<string, Pick>(
     picks.map((p: Pick) => [p.match_id, p])
@@ -125,7 +162,7 @@ export default async function DashboardPage({
                 key={key}
                 label={getDayLabel(dayMatches[0].match_date)}
                 matches={dayMatches}
-                userId={user!.id}
+                userId={user.id}
               />
             ))
           })()}
@@ -147,7 +184,7 @@ export default async function DashboardPage({
                         key={groupName}
                         groupName={groupName}
                         matches={groupMatches}
-                        userId={user!.id}
+                        userId={user.id}
                       />
                     ))}
                 </div>
@@ -156,7 +193,7 @@ export default async function DashboardPage({
                   {Array.from(byStage.get(stage)!.values())
                     .flat()
                     .map((m) => (
-                      <MatchCard key={m.id} match={m} userId={user!.id} />
+                      <MatchCard key={m.id} match={m} userId={user.id} />
                     ))}
                 </div>
               )}

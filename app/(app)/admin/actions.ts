@@ -1,14 +1,13 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireSupabaseUser } from '@/lib/supabase/auth'
 import { fetchAllGames } from '@/lib/worldcup-api'
 import { calcPoints } from '@/lib/scoring'
 
 async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { supabase, user } = await requireSupabaseUser()
 
   const { data: profile } = await supabase
     .from('profiles')

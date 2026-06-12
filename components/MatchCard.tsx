@@ -43,7 +43,10 @@ export function MatchCard({ match, userId, groupLabel }: Props) {
   const locked = isLocked(match.match_date) || match.status !== 'scheduled'
   const [homeScore, setHomeScore] = useState(match.pick?.home_score?.toString() ?? '')
   const [awayScore, setAwayScore] = useState(match.pick?.away_score?.toString() ?? '')
+  const [savedHomeScore, setSavedHomeScore] = useState(match.pick?.home_score?.toString() ?? '')
+  const [savedAwayScore, setSavedAwayScore] = useState(match.pick?.away_score?.toString() ?? '')
   const [isPending, startTransition] = useTransition()
+  const isDirty = homeScore !== savedHomeScore || awayScore !== savedAwayScore
 
   function handleSave() {
     const home = parseInt(homeScore, 10)
@@ -55,7 +58,11 @@ export function MatchCard({ match, userId, groupLabel }: Props) {
     startTransition(async () => {
       const result = await savePick(match.id, home, away)
       if (result.error) toast.error('Erro ao salvar: ' + result.error)
-      else toast.success('Palpite salvo!')
+      else {
+        setSavedHomeScore(home.toString())
+        setSavedAwayScore(away.toString())
+        toast.success('Palpite salvo!')
+      }
     })
   }
 
@@ -138,7 +145,7 @@ export function MatchCard({ match, userId, groupLabel }: Props) {
           <div className="mt-3">
             <Button
               size="sm" onClick={handleSave}
-              disabled={isPending || homeScore === '' || awayScore === ''}
+              disabled={isPending || homeScore === '' || awayScore === '' || !isDirty}
               className="w-full"
             >
               {isPending ? 'Salvando...' : match.pick ? 'Atualizar palpite' : 'Salvar palpite'}

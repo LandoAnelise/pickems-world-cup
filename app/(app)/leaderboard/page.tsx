@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireSupabaseUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { logPerf, nowMs } from '@/lib/logger'
 import { type LeaderboardEntry } from '@/lib/types'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -9,19 +10,31 @@ import { Badge } from '@/components/ui/badge'
 const MEDALS = ['🥇', '🥈', '🥉']
 
 export default async function LeaderboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await requireSupabaseUser()
+  const dataLoadStartedAt = nowMs()
 
   const cached = await cacheGet<LeaderboardEntry[]>('leaderboard')
   let entries = cached
   let error = null
+  let source = cached ? 'cache' : 'rpc'
 
   if (!cached) {
+    const rpcStartedAt = nowMs()
     const result = await supabase.rpc('get_leaderboard')
     error = result.error
     entries = result.data
     if (entries) await cacheSet('leaderboard', entries, 120)
+
+    logPerf('page:leaderboard', 'rpc', nowMs() - rpcStartedAt, {
+      count: entries?.length ?? 0,
+      status: error ? 'error' : 'ok',
+    })
   }
+
+  logPerf('page:leaderboard', 'data-load', nowMs() - dataLoadStartedAt, {
+    source,
+    count: entries?.length ?? 0,
+  })
 
   if (error) {
     return (

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { logPerf, nowMs } from '@/lib/logger'
 import { type Match } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
 
@@ -57,7 +58,10 @@ function BracketMatch({ match }: { match: Match }) {
 
 export default async function ChaveamentoPage() {
   const supabase = await createClient()
+  const dataLoadStartedAt = nowMs()
   let matches = await cacheGet<Match[]>('matches:bracket')
+  let source = matches ? 'cache' : 'db'
+
   if (!matches) {
     const { data } = await supabase
       .from('matches')
@@ -65,8 +69,13 @@ export default async function ChaveamentoPage() {
       .neq('stage', 'group')
       .order('match_date', { ascending: true })
     matches = data ?? []
-    if (matches.length) await cacheSet('matches:bracket', matches, 120)
+    await cacheSet('matches:bracket', matches, 120)
   }
+
+  logPerf('page:bracket', 'data-load', nowMs() - dataLoadStartedAt, {
+    source,
+    count: matches?.length ?? 0,
+  })
 
   if (!matches || matches.length === 0) {
     return (
