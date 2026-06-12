@@ -141,11 +141,11 @@ export function MatchCard({ match, userId, groupLabel }: Props) {
           </div>
         </div>
 
-        {!locked && isDirty && (
+        {!locked && (
           <div className="mt-3">
             <Button
               size="sm" onClick={handleSave}
-              disabled={isPending || homeScore === '' || awayScore === ''}
+              disabled={isPending || homeScore === '' || awayScore === '' || !isDirty}
               className="w-full"
             >
               {isPending ? 'Salvando...' : match.pick ? 'Atualizar palpite' : 'Salvar palpite'}
