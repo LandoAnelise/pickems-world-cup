@@ -96,7 +96,7 @@ export async function resetMatch(matchId: string): Promise<{ error?: string }> {
 
   const { error: matchError } = await adminClient
     .from('matches')
-    .update({ status: 'live', home_score: null, away_score: null })
+    .update({ status: 'scheduled', home_score: null, away_score: null })
     .eq('id', matchId)
 
   if (matchError) return { error: matchError.message }
