@@ -57,7 +57,7 @@ export function AdminPanel({ matches: initialMatches }: Props) {
     setResettingId(null)
     if (result.error) toast.error(result.error)
     else {
-      toast.success('Jogo revertido para "próximos". Sincronize quando terminar.')
+      toast.success('Jogo revertido para "ao vivo". Sincronize quando terminar.')
       router.refresh()
     }
   }
@@ -144,14 +144,14 @@ export function AdminPanel({ matches: initialMatches }: Props) {
                     onClick={() => handleReset(m.id)}
                     disabled={resettingId === m.id}
                   >
-                    {resettingId === m.id ? 'Revertendo...' : 'Reverter para próximos'}
+                    {resettingId === m.id ? 'Revertendo...' : 'Reverter para ao vivo'}
                   </Button>
                 </div>
               ))}
             </div>
           )}
           <p className="text-xs text-muted-foreground mt-3">
-            Use quando a API marcar um jogo como encerrado antes do tempo. Após reverter, o jogo volta para "Próximos" e os palpites são liberados novamente.
+            Use quando a API marcar um jogo como encerrado antes do tempo. Após reverter, sincronize os resultados quando o jogo realmente terminar.
           </p>
         </CardContent>
       </Card>
