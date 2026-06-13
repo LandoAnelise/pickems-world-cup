@@ -91,6 +91,22 @@ export async function syncResults(): Promise<{ updatedMatches: number; updatedPi
   return { updatedMatches, updatedPicks }
 }
 
+export async function resetMatch(matchId: string): Promise<{ error?: string }> {
+  const { adminClient } = await requireAdmin()
+
+  const { error: matchError } = await adminClient
+    .from('matches')
+    .update({ status: 'live', home_score: null, away_score: null })
+    .eq('id', matchId)
+
+  if (matchError) return { error: matchError.message }
+
+  // Zera os pontos dos picks para que o cálculo rode novamente quando o jogo acabar
+  await adminClient.from('picks').update({ points: null }).eq('match_id', matchId)
+
+  return {}
+}
+
 export async function setManualResult(
   matchId: string,
   homeScore: number,
