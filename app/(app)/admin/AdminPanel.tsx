@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import Image from 'next/image'
 import { type Match } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
-import { syncFixtures, syncResults, setManualResult, resetMatch } from './actions'
+import { syncFixtures, syncResults, setManualResult, resetMatch, updateMatchDate } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,6 +22,8 @@ export function AdminPanel({ matches: initialMatches }: Props) {
     Record<string, { home: string; away: string }>
   >({})
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [editingDateId, setEditingDateId] = useState<string | null>(null)
+  const [dateInputs, setDateInputs] = useState<Record<string, string>>({})
 
   const pendingMatches = initialMatches.filter((m) => m.status !== 'finished')
   const finishedMatches = initialMatches.filter((m) => m.status === 'finished')
@@ -58,6 +60,20 @@ export function AdminPanel({ matches: initialMatches }: Props) {
     if (result.error) toast.error(result.error)
     else {
       toast.success('Jogo revertido para "ao vivo". Sincronize quando terminar.')
+      router.refresh()
+    }
+  }
+
+  async function handleUpdateDate(matchId: string) {
+    const newDate = dateInputs[matchId]
+    if (!newDate) return
+    setSavingId(matchId)
+    const result = await updateMatchDate(matchId, newDate)
+    setSavingId(null)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Horário atualizado!')
+      setEditingDateId(null)
       router.refresh()
     }
   }
@@ -153,6 +169,58 @@ export function AdminPanel({ matches: initialMatches }: Props) {
           <p className="text-xs text-muted-foreground mt-3">
             Use quando a API marcar um jogo como encerrado antes do tempo. Após reverter, sincronize os resultados quando o jogo realmente terminar.
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Corrigir horário de jogo */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Corrigir horário de jogo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {pendingMatches.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum jogo pendente.</p>
+          ) : (
+            <div className="space-y-2">
+              {pendingMatches.map((m) => {
+                const localDt = new Date(m.match_date)
+                  .toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+                  .slice(0, 16)
+                const isEditing = editingDateId === m.id
+                return (
+                  <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border text-sm flex-wrap">
+                    <Badge variant="outline" className="shrink-0">
+                      {m.group_name ?? m.stage.toUpperCase()}
+                    </Badge>
+                    <span className="flex-1 min-w-[180px] flex items-center gap-1.5">
+                      {getTeamName(m.home_team)} × {getTeamName(m.away_team)}
+                    </span>
+                    {isEditing ? (
+                      <>
+                        <Input
+                          type="datetime-local"
+                          defaultValue={localDt}
+                          onChange={(e) =>
+                            setDateInputs((prev) => ({ ...prev, [m.id]: new Date(e.target.value).toISOString() }))
+                          }
+                          className="h-8 text-xs w-44"
+                        />
+                        <Button size="sm" onClick={() => handleUpdateDate(m.id)} disabled={savingId === m.id || !dateInputs[m.id]}>
+                          {savingId === m.id ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingDateId(null)}>Cancelar</Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground text-xs">{localDt.replace('T', ' ')}</span>
+                        <Button size="sm" variant="outline" onClick={() => setEditingDateId(m.id)}>Editar horário</Button>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

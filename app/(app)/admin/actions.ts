@@ -91,6 +91,19 @@ export async function syncResults(): Promise<{ updatedMatches: number; updatedPi
   return { updatedMatches, updatedPicks }
 }
 
+export async function updateMatchDate(
+  matchId: string,
+  newDate: string
+): Promise<{ error?: string }> {
+  const { adminClient } = await requireAdmin()
+  const { error } = await adminClient
+    .from('matches')
+    .update({ match_date: newDate })
+    .eq('id', matchId)
+  if (error) return { error: error.message }
+  return {}
+}
+
 export async function resetMatch(matchId: string): Promise<{ error?: string }> {
   const { adminClient } = await requireAdmin()
 
