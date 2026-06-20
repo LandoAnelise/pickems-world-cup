@@ -148,7 +148,7 @@ export default async function DashboardPage({
           <p className="text-4xl mb-4">⚽</p>
           <p>{emptyMessages[filter]}</p>
         </div>
-      ) : filter === 'upcoming' ? (
+      ) : filter !== 'all' ? (
         <div className="space-y-6">
           {(() => {
             const byDay = new Map<string, MatchWithPick[]>()
