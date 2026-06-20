@@ -151,8 +151,9 @@ export default async function DashboardPage({
       ) : filter !== 'all' ? (
         <div className="space-y-6">
           {(() => {
+            const ordered = filter === 'finished' ? [...filtered].reverse() : filtered
             const byDay = new Map<string, MatchWithPick[]>()
-            for (const m of filtered) {
+            for (const m of ordered) {
               const key = getDayKey(m.match_date)
               if (!byDay.has(key)) byDay.set(key, [])
               byDay.get(key)!.push(m)
