@@ -5,11 +5,11 @@ import { type Match } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
 
 const ROUNDS = [
-  { stage: 'r32', label: 'Oitavas' },
-  { stage: 'r16', label: 'Quartas' },
-  { stage: 'qf', label: 'Semifinal' },
-  { stage: 'sf', label: 'Final' },
-  { stage: 'final', label: 'Grande Final' },
+  { stage: 'r32', label: 'Dezesseis avos' },
+  { stage: 'r16', label: 'Oitavas' },
+  { stage: 'qf', label: 'Quartas' },
+  { stage: 'sf', label: 'Semifinal' },
+  { stage: 'final', label: 'Final' },
 ]
 
 function TeamRow({

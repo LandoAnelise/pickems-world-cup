@@ -10,11 +10,11 @@ import { DaySection } from '@/components/DaySection'
 
 const STAGE_LABELS: Record<string, string> = {
   group: 'Fase de Grupos',
-  r32: 'Oitavas de Final',
-  r16: 'Quartas de Final',
-  qf: 'Semifinal',
-  sf: 'Final',
-  final: 'Grande Final',
+  r32: 'Dezesseis avos de Final',
+  r16: 'Oitavas de Final',
+  qf: 'Quartas de Final',
+  sf: 'Semifinal',
+  final: 'Final',
   third: '3º Lugar',
 }
 
