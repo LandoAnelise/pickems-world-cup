@@ -7,7 +7,7 @@ import { getFlagUrl, getTeamName } from '@/lib/flags'
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SLOT = 68
 const HALF = 8
-const CARD_W = 144 // px (w-36)
+const CARD_W = 128 // px (w-32)
 
 // Ordem correta do chaveamento (par de times por posição no bracket)
 const BRACKET_ORDER: [string, string][] = [
@@ -162,7 +162,7 @@ function BracketMatchCard({ match }: { match: Match }) {
   const homeWins = finished && (match.home_score ?? 0) > (match.away_score ?? 0)
   const awayWins = finished && (match.away_score ?? 0) > (match.home_score ?? 0)
   return (
-    <div className="rounded border bg-card overflow-hidden shadow-sm w-36 shrink-0">
+    <div className="rounded border bg-card overflow-hidden shadow-sm w-32 shrink-0">
       <TeamRowDisplay team={match.home_team} score={match.home_score} isWinner={homeWins} />
       <div className="border-t" />
       <TeamRowDisplay team={match.away_team} score={match.away_score} isWinner={awayWins} />
@@ -172,7 +172,7 @@ function BracketMatchCard({ match }: { match: Match }) {
 
 function EmptyMatchCard() {
   return (
-    <div className="rounded border border-dashed border-muted-foreground/25 bg-muted/10 overflow-hidden w-36 shrink-0">
+    <div className="rounded border border-dashed border-muted-foreground/25 bg-muted/10 overflow-hidden w-32 shrink-0">
       <div className="flex items-center gap-1.5 px-2 py-[5px]">
         <div className="w-5 h-3.5 bg-muted/50 rounded shrink-0" />
         <span className="flex-1 text-[10px] text-muted-foreground/40 italic">A definir</span>
@@ -265,9 +265,6 @@ function PredTeamButton({
       >
         {team ? getTeamName(team) : 'A definir'}
       </span>
-      {isPicked && (
-        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 ml-1">✓</span>
-      )}
     </button>
   )
 }
@@ -290,7 +287,7 @@ function PredMatchCard({
   const awayElim = pick !== null && !awayPicked
 
   return (
-    <div className="rounded border bg-card overflow-hidden shadow-sm w-36 shrink-0 select-none">
+    <div className="rounded border bg-card overflow-hidden shadow-sm w-32 shrink-0 select-none">
       <PredTeamButton
         team={home}
         isPicked={homePicked}
@@ -416,7 +413,9 @@ export default function ChaveamentoTabs({
   const halfH = HALF * SLOT
 
   // Deadline = 10 min antes do primeiro jogo dos dezesseis avos
-  const firstR32Ms = r32All[0]?.match_date ? new Date(r32All[0].match_date).getTime() : null
+  const firstR32Ms = r32All.length
+    ? Math.min(...r32All.map((m) => new Date(m.match_date).getTime()))
+    : null
   const deadline = firstR32Ms ? firstR32Ms - 10 * 60 * 1000 : null
   const isLocked = deadline !== null ? now >= deadline : false
   const timeLeft = deadline !== null ? Math.max(0, deadline - now) : null
