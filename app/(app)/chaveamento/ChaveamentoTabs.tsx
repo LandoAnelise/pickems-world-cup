@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { type Match, type BracketPicks } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
+import { saveBracketPicks } from './actions'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SLOT = 68
@@ -424,20 +425,13 @@ export default function ChaveamentoTabs({
   }, [])
 
   async function handleSave() {
-    // Sempre salva local como fallback imediato
     localStorage.setItem(STORAGE_KEY, JSON.stringify(picks))
-
     try {
-      const res = await fetch('/api/bracket-picks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ picks }),
-      })
-      setSavedMsg(res.ok ? 'ok' : 'err')
+      const result = await saveBracketPicks(picks)
+      setSavedMsg(result.ok ? 'ok' : 'err')
     } catch {
       setSavedMsg('err')
     }
-
     setTimeout(() => setSavedMsg(null), 2500)
   }
 
