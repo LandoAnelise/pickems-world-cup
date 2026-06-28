@@ -342,6 +342,50 @@ function PredColumn({
   )
 }
 
+// ── Bracket connector lines ────────────────────────────────────────────────────
+function BracketConnector({
+  count,
+  height,
+  reversed = false,
+}: {
+  count: number
+  height: number
+  reversed?: boolean
+}) {
+  const slotH = height / count
+
+  return (
+    <div className="flex flex-col shrink-0" style={{ width: 12 }}>
+      {/* invisible spacer matching the column label height */}
+      <p className="text-[10px] mb-2 invisible" aria-hidden>_</p>
+      <svg width="12" height={height} className="text-border">
+        <g stroke="currentColor" strokeWidth="1.5" fill="none">
+          {count === 1 ? (
+            <line x1="0" y1={slotH / 2} x2="12" y2={slotH / 2} />
+          ) : (
+            Array.from({ length: count / 2 }, (_, i) => {
+              const y1 = i * 2 * slotH + slotH / 2
+              const y2 = (i * 2 + 1) * slotH + slotH / 2
+              const yMid = (y1 + y2) / 2
+              return reversed ? (
+                <g key={i}>
+                  <polyline points={`12,${y1} 6,${y1} 6,${y2} 12,${y2}`} />
+                  <line x1="6" y1={yMid} x2="0" y2={yMid} />
+                </g>
+              ) : (
+                <g key={i}>
+                  <polyline points={`0,${y1} 6,${y1} 6,${y2} 0,${y2}`} />
+                  <line x1="6" y1={yMid} x2="12" y2={yMid} />
+                </g>
+              )
+            })
+          )}
+        </g>
+      </svg>
+    </div>
+  )
+}
+
 const STORAGE_KEY = 'chaveamento-picks-2026'
 
 function loadLocalPicks(): Picks | null {
@@ -483,11 +527,15 @@ export default function ChaveamentoTabs({
       {tab === 'results' && (
         <>
           <div className="overflow-x-auto pb-4">
-            <div className="flex gap-3 min-w-max items-start">
+            <div className="flex gap-0 min-w-max items-start">
               <ResultsColumn label="16 avos" matches={r32All.slice(0, HALF)} count={HALF} height={halfH} />
+              <BracketConnector count={HALF} height={halfH} />
               <ResultsColumn label="Oitavas" matches={r16All.slice(0, 4)} count={4} height={halfH} />
+              <BracketConnector count={4} height={halfH} />
               <ResultsColumn label="Quartas" matches={qfAll.slice(0, 2)} count={2} height={halfH} />
+              <BracketConnector count={2} height={halfH} />
               <ResultsColumn label="Semifinal" matches={sfAll.slice(0, 1)} count={1} height={halfH} />
+              <BracketConnector count={1} height={halfH} />
 
               <div className="flex flex-col" style={{ width: CARD_W }}>
                 <p className="text-[10px] font-semibold text-center text-muted-foreground mb-2 uppercase tracking-wide">
@@ -498,9 +546,13 @@ export default function ChaveamentoTabs({
                 </div>
               </div>
 
+              <BracketConnector count={1} height={halfH} reversed />
               <ResultsColumn label="Semifinal" matches={sfAll.slice(1)} count={1} height={halfH} />
+              <BracketConnector count={2} height={halfH} reversed />
               <ResultsColumn label="Quartas" matches={qfAll.slice(2)} count={2} height={halfH} />
+              <BracketConnector count={4} height={halfH} reversed />
               <ResultsColumn label="Oitavas" matches={r16All.slice(4)} count={4} height={halfH} />
+              <BracketConnector count={HALF} height={halfH} reversed />
               <ResultsColumn label="16 avos" matches={r32All.slice(HALF)} count={HALF} height={halfH} />
             </div>
           </div>
@@ -572,7 +624,7 @@ export default function ChaveamentoTabs({
           </div>
 
           <div className="overflow-x-auto pb-4">
-            <div className="flex gap-3 min-w-max items-start">
+            <div className="flex gap-0 min-w-max items-start">
               {/* Lado esquerdo */}
               <PredColumn
                 label="16 avos"
@@ -582,6 +634,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'r32', i, team))}
               />
+              <BracketConnector count={HALF} height={halfH} />
               <PredColumn
                 label="Oitavas"
                 matches={r16LeftPred}
@@ -590,6 +643,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'r16', i, team))}
               />
+              <BracketConnector count={4} height={halfH} />
               <PredColumn
                 label="Quartas"
                 matches={qfLeftPred}
@@ -598,6 +652,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'qf', i, team))}
               />
+              <BracketConnector count={2} height={halfH} />
               <PredColumn
                 label="Semifinal"
                 matches={sfLeftPred}
@@ -606,6 +661,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'sf', i, team))}
               />
+              <BracketConnector count={1} height={halfH} />
 
               {/* Final (centro) */}
               <div className="flex flex-col" style={{ width: CARD_W }}>
@@ -625,6 +681,7 @@ export default function ChaveamentoTabs({
               </div>
 
               {/* Lado direito (espelhado) */}
+              <BracketConnector count={1} height={halfH} reversed />
               <PredColumn
                 label="Semifinal"
                 matches={sfRightPred}
@@ -633,6 +690,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'sf', i + 1, team))}
               />
+              <BracketConnector count={2} height={halfH} reversed />
               <PredColumn
                 label="Quartas"
                 matches={qfRightPred}
@@ -641,6 +699,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'qf', i + 2, team))}
               />
+              <BracketConnector count={4} height={halfH} reversed />
               <PredColumn
                 label="Oitavas"
                 matches={r16RightPred}
@@ -649,6 +708,7 @@ export default function ChaveamentoTabs({
                 locked={isLocked}
                 onPick={(i, team) => setPicks((p) => applyPick(p, 'r16', i + 4, team))}
               />
+              <BracketConnector count={HALF} height={halfH} reversed />
               <PredColumn
                 label="16 avos"
                 matches={r32RightPred}
