@@ -411,12 +411,23 @@ export default function ChaveamentoTabs({
   const [now, setNow] = useState(() => Date.now())
   const [savedMsg, setSavedMsg] = useState<'ok' | 'err' | null>(null)
 
-  // Fallback: se não veio do servidor, tenta localStorage
+  // Se não veio do servidor: tenta API, depois localStorage
   useEffect(() => {
-    if (!initialPicks) {
-      const local = loadLocalPicks()
-      if (local) setPicks(local)
-    }
+    if (initialPicks) return
+    fetch('/api/bracket-picks')
+      .then((r) => r.json())
+      .then(({ picks }) => {
+        if (picks) {
+          setPicks(picks as Picks)
+        } else {
+          const local = loadLocalPicks()
+          if (local) setPicks(local)
+        }
+      })
+      .catch(() => {
+        const local = loadLocalPicks()
+        if (local) setPicks(local)
+      })
   }, [initialPicks])
 
   useEffect(() => {
