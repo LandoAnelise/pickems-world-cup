@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/auth'
 import { cacheGet, cacheSet } from '@/lib/cache'
 import { logPerf, nowMs } from '@/lib/logger'
 import { type Match, type BracketPicks } from '@/lib/types'
@@ -35,10 +36,11 @@ export default async function ChaveamentoPage() {
     )
   }
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   let initialPicks: BracketPicks | null = null
   if (user) {
-    const { data: bp } = await supabase
+    const admin = createAdminClient()
+    const { data: bp } = await admin
       .from('bracket_picks')
       .select('picks')
       .eq('user_id', user.id)
