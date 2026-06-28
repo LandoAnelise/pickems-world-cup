@@ -409,7 +409,7 @@ export default function ChaveamentoTabs({
   const [tab, setTab] = useState<'results' | 'prediction'>('results')
   const [picks, setPicks] = useState<Picks>(() => initialPicks ?? initPicks())
   const [now, setNow] = useState(() => Date.now())
-  const [savedMsg, setSavedMsg] = useState<'ok' | 'err' | null>(null)
+  const [savedMsg, setSavedMsg] = useState<{ type: 'ok' | 'err'; detail?: string } | null>(null)
 
   // Fallback: se não veio do servidor, tenta localStorage
   useEffect(() => {
@@ -428,11 +428,11 @@ export default function ChaveamentoTabs({
     localStorage.setItem(STORAGE_KEY, JSON.stringify(picks))
     try {
       const result = await saveBracketPicks(picks)
-      setSavedMsg(result.ok ? 'ok' : 'err')
-    } catch {
-      setSavedMsg('err')
+      setSavedMsg(result.ok ? { type: 'ok' } : { type: 'err', detail: result.error })
+    } catch (e) {
+      setSavedMsg({ type: 'err', detail: e instanceof Error ? e.message : String(e) })
     }
-    setTimeout(() => setSavedMsg(null), 2500)
+    setTimeout(() => setSavedMsg(null), 6000)
   }
 
   const byStage = new Map<string, Match[]>()
@@ -590,14 +590,14 @@ export default function ChaveamentoTabs({
               )}
             </div>
             <div className="flex items-center gap-3">
-              {savedMsg === 'ok' && (
+              {savedMsg?.type === 'ok' && (
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                   Salvo!
                 </span>
               )}
-              {savedMsg === 'err' && (
+              {savedMsg?.type === 'err' && (
                 <span className="text-xs text-destructive font-medium">
-                  Erro ao salvar
+                  Erro: {savedMsg.detail ?? 'desconhecido'}
                 </span>
               )}
               {!isLocked && (
