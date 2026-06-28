@@ -7,6 +7,53 @@ import { getFlagUrl, getTeamName } from '@/lib/flags'
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SLOT = 68
 const HALF = 8
+const CARD_W = 144 // px (w-36)
+
+// Ordem correta do chaveamento (par de times por posição no bracket)
+const BRACKET_ORDER: [string, string][] = [
+  // Lado esquerdo (posições 0-7)
+  ['Germany', 'Paraguay'],
+  ['France', 'Sweden'],
+  ['South Africa', 'Canada'],
+  ['Netherlands', 'Morocco'],
+  ['Portugal', 'Croatia'],
+  ['Spain', 'Austria'],
+  ['United States', 'Bosnia and Herzegovina'],
+  ['Belgium', 'Senegal'],
+  // Lado direito (posições 8-15)
+  ['Brazil', 'Japan'],
+  ['Ivory Coast', 'Norway'],
+  ['Mexico', 'Ecuador'],
+  ['England', 'Democratic Republic of the Congo'],
+  ['Argentina', 'Cape Verde'],
+  ['Australia', 'Egypt'],
+  ['Switzerland', 'Algeria'],
+  ['Colombia', 'Ghana'],
+]
+
+function sortR32ByBracket(matches: Match[]): Match[] {
+  const result: (Match | null)[] = new Array(16).fill(null)
+  const used = new Set<string>()
+  for (const m of matches) {
+    const idx = BRACKET_ORDER.findIndex(
+      ([h, a]) =>
+        (m.home_team === h && m.away_team === a) ||
+        (m.home_team === a && m.away_team === h),
+    )
+    if (idx >= 0 && result[idx] === null) {
+      result[idx] = m
+      used.add(m.id)
+    }
+  }
+  let fill = 0
+  for (const m of matches) {
+    if (!used.has(m.id)) {
+      while (fill < 16 && result[fill] !== null) fill++
+      if (fill < 16) result[fill] = m
+    }
+  }
+  return result.filter(Boolean) as Match[]
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Picks {
@@ -121,7 +168,7 @@ function BracketMatchCard({ match }: { match: Match }) {
   const homeWins = finished && (match.home_score ?? 0) > (match.away_score ?? 0)
   const awayWins = finished && (match.away_score ?? 0) > (match.home_score ?? 0)
   return (
-    <div className="rounded border bg-card overflow-hidden shadow-sm w-44 shrink-0">
+    <div className="rounded border bg-card overflow-hidden shadow-sm w-36 shrink-0">
       <TeamRowDisplay team={match.home_team} score={match.home_score} isWinner={homeWins} />
       <div className="border-t" />
       <TeamRowDisplay team={match.away_team} score={match.away_score} isWinner={awayWins} />
@@ -131,7 +178,7 @@ function BracketMatchCard({ match }: { match: Match }) {
 
 function EmptyMatchCard() {
   return (
-    <div className="rounded border border-dashed border-muted-foreground/25 bg-muted/10 overflow-hidden w-44 shrink-0">
+    <div className="rounded border border-dashed border-muted-foreground/25 bg-muted/10 overflow-hidden w-36 shrink-0">
       <div className="flex items-center gap-1.5 px-2 py-[5px]">
         <div className="w-5 h-3.5 bg-muted/50 rounded shrink-0" />
         <span className="flex-1 text-[10px] text-muted-foreground/40 italic">A definir</span>
@@ -157,7 +204,7 @@ function ResultsColumn({
   height: number
 }) {
   return (
-    <div className="flex flex-col" style={{ width: 176 }}>
+    <div className="flex flex-col" style={{ width: CARD_W }}>
       <p className="text-[10px] font-semibold text-center text-muted-foreground mb-2 uppercase tracking-wide">
         {label}
       </p>
@@ -249,7 +296,7 @@ function PredMatchCard({
   const awayElim = pick !== null && !awayPicked
 
   return (
-    <div className="rounded border bg-card overflow-hidden shadow-sm w-44 shrink-0 select-none">
+    <div className="rounded border bg-card overflow-hidden shadow-sm w-36 shrink-0 select-none">
       <PredTeamButton
         team={home}
         isPicked={homePicked}
@@ -285,7 +332,7 @@ function PredColumn({
   onPick: (localIdx: number, team: string | null) => void
 }) {
   return (
-    <div className="flex flex-col" style={{ width: 176 }}>
+    <div className="flex flex-col" style={{ width: CARD_W }}>
       <p className="text-[10px] font-semibold text-center text-muted-foreground mb-2 uppercase tracking-wide">
         {label}
       </p>
@@ -304,16 +351,40 @@ function PredColumn({
   )
 }
 
+const STORAGE_KEY = 'chaveamento-picks-2026'
+
+function loadPicks(): Picks {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return initPicks()
+    const parsed = JSON.parse(raw) as Picks
+    return parsed
+  } catch {
+    return initPicks()
+  }
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
   const [tab, setTab] = useState<'results' | 'prediction'>('results')
   const [picks, setPicks] = useState<Picks>(initPicks)
   const [now, setNow] = useState(() => Date.now())
+  const [savedMsg, setSavedMsg] = useState(false)
+
+  useEffect(() => {
+    setPicks(loadPicks())
+  }, [])
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  function handleSave() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(picks))
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 2000)
+  }
 
   const byStage = new Map<string, Match[]>()
   for (const m of matches) {
@@ -321,7 +392,7 @@ export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
     byStage.get(m.stage)!.push(m)
   }
 
-  const r32All = byStage.get('r32') ?? []
+  const r32All = sortR32ByBracket(byStage.get('r32') ?? [])
   const r16All = byStage.get('r16') ?? []
   const qfAll = byStage.get('qf') ?? []
   const sfAll = byStage.get('sf') ?? []
@@ -405,7 +476,7 @@ export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
               <ResultsColumn label="Quartas" matches={qfAll.slice(0, 2)} count={2} height={halfH} />
               <ResultsColumn label="Semifinal" matches={sfAll.slice(0, 1)} count={1} height={halfH} />
 
-              <div className="flex flex-col" style={{ width: 176 }}>
+              <div className="flex flex-col" style={{ width: CARD_W }}>
                 <p className="text-[10px] font-semibold text-center text-muted-foreground mb-2 uppercase tracking-wide">
                   Final
                 </p>
@@ -459,14 +530,27 @@ export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
                 </span>
               )}
             </div>
-            {!isLocked && (
+            <div className="flex items-center gap-3">
+              {savedMsg && (
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  Salvo!
+                </span>
+              )}
+              {!isLocked && (
+                <button
+                  onClick={() => setPicks(initPicks())}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Resetar
+                </button>
+              )}
               <button
-                onClick={() => setPicks(initPicks())}
-                className="text-xs text-muted-foreground hover:text-foreground underline"
+                onClick={handleSave}
+                className="text-xs font-medium bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90 transition-colors"
               >
-                Resetar
+                Salvar
               </button>
-            )}
+            </div>
           </div>
 
           <div className="overflow-x-auto pb-4">
@@ -506,7 +590,7 @@ export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
               />
 
               {/* Final (centro) */}
-              <div className="flex flex-col" style={{ width: 176 }}>
+              <div className="flex flex-col" style={{ width: CARD_W }}>
                 <p className="text-[10px] font-semibold text-center text-muted-foreground mb-2 uppercase tracking-wide">
                   Final
                 </p>
