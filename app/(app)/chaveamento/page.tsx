@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cacheGet, cacheSet } from '@/lib/cache'
 import { logPerf, nowMs } from '@/lib/logger'
-import { type Match } from '@/lib/types'
+import { type Match, type BracketPicks } from '@/lib/types'
 import ChaveamentoTabs from './ChaveamentoTabs'
 
 export default async function ChaveamentoPage() {
@@ -35,13 +35,24 @@ export default async function ChaveamentoPage() {
     )
   }
 
+  const { data: { user } } = await supabase.auth.getUser()
+  let initialPicks: BracketPicks | null = null
+  if (user) {
+    const { data: bp } = await supabase
+      .from('bracket_picks')
+      .select('picks')
+      .eq('user_id', user.id)
+      .single()
+    if (bp?.picks) initialPicks = bp.picks as BracketPicks
+  }
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Chaveamento</h1>
         <p className="text-muted-foreground text-sm mt-1">Fase eliminatória da Copa 2026</p>
       </div>
-      <ChaveamentoTabs matches={matches as Match[]} />
+      <ChaveamentoTabs matches={matches as Match[]} initialPicks={initialPicks} />
     </div>
   )
 }

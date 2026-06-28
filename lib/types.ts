@@ -31,6 +31,14 @@ export type Pick = {
 
 export type MatchWithPick = Match & { pick?: Pick }
 
+export type BracketPicks = {
+  r32: (string | null)[]
+  r16: (string | null)[]
+  qf: (string | null)[]
+  sf: (string | null)[]
+  final: string | null
+}
+
 export type LeaderboardEntry = {
   user_id: string
   username: string

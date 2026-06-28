@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { type Match } from '@/lib/types'
+import { type Match, type BracketPicks } from '@/lib/types'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -56,13 +56,7 @@ function sortR32ByBracket(matches: Match[]): Match[] {
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-interface Picks {
-  r32: (string | null)[] // [16]
-  r16: (string | null)[] // [8]
-  qf: (string | null)[]  // [4]
-  sf: (string | null)[]  // [2]
-  final: string | null
-}
+type Picks = BracketPicks
 
 type RoundKey = keyof Omit<Picks, 'final'>
 
@@ -353,37 +347,57 @@ function PredColumn({
 
 const STORAGE_KEY = 'chaveamento-picks-2026'
 
-function loadPicks(): Picks {
+function loadLocalPicks(): Picks | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return initPicks()
-    const parsed = JSON.parse(raw) as Picks
-    return parsed
+    return raw ? (JSON.parse(raw) as Picks) : null
   } catch {
-    return initPicks()
+    return null
   }
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
+export default function ChaveamentoTabs({
+  matches,
+  initialPicks,
+}: {
+  matches: Match[]
+  initialPicks?: BracketPicks | null
+}) {
   const [tab, setTab] = useState<'results' | 'prediction'>('results')
-  const [picks, setPicks] = useState<Picks>(initPicks)
+  const [picks, setPicks] = useState<Picks>(() => initialPicks ?? initPicks())
   const [now, setNow] = useState(() => Date.now())
-  const [savedMsg, setSavedMsg] = useState(false)
+  const [savedMsg, setSavedMsg] = useState<'ok' | 'err' | null>(null)
 
+  // Fallback: se não veio do servidor, tenta localStorage
   useEffect(() => {
-    setPicks(loadPicks())
-  }, [])
+    if (!initialPicks) {
+      const local = loadLocalPicks()
+      if (local) setPicks(local)
+    }
+  }, [initialPicks])
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  function handleSave() {
+  async function handleSave() {
+    // Sempre salva local como fallback imediato
     localStorage.setItem(STORAGE_KEY, JSON.stringify(picks))
-    setSavedMsg(true)
-    setTimeout(() => setSavedMsg(false), 2000)
+
+    try {
+      const res = await fetch('/api/bracket-picks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ picks }),
+      })
+      setSavedMsg(res.ok ? 'ok' : 'err')
+    } catch {
+      setSavedMsg('err')
+    }
+
+    setTimeout(() => setSavedMsg(null), 2500)
   }
 
   const byStage = new Map<string, Match[]>()
@@ -531,9 +545,14 @@ export default function ChaveamentoTabs({ matches }: { matches: Match[] }) {
               )}
             </div>
             <div className="flex items-center gap-3">
-              {savedMsg && (
+              {savedMsg === 'ok' && (
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                   Salvo!
+                </span>
+              )}
+              {savedMsg === 'err' && (
+                <span className="text-xs text-destructive font-medium">
+                  Erro ao salvar
                 </span>
               )}
               {!isLocked && (
