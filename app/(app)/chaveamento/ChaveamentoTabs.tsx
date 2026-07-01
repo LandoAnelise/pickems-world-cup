@@ -32,7 +32,7 @@ const BRACKET_ORDER: [string, string][] = [
   ['Colombia', 'Ghana'],
 ]
 
-function sortR32ByBracket(matches: Match[]): Match[] {
+function sortR32ByBracket(matches: Match[]): (Match | null)[] {
   const result: (Match | null)[] = new Array(16).fill(null)
   const used = new Set<string>()
   for (const m of matches) {
@@ -53,7 +53,48 @@ function sortR32ByBracket(matches: Match[]): Match[] {
       if (fill < 16) result[fill] = m
     }
   }
-  return result.filter(Boolean) as Match[]
+  return result
+}
+
+// Coloca partidas de um round no slot correto usando o round anterior como referência
+function sortByBracket(
+  matches: Match[],
+  prevRound: (Match | null)[],
+  slotCount: number,
+): (Match | null)[] {
+  const result: (Match | null)[] = new Array(slotCount).fill(null)
+  const used = new Set<string>()
+
+  for (let k = 0; k < slotCount; k++) {
+    const m1 = prevRound[k * 2]
+    const m2 = prevRound[k * 2 + 1]
+    if (!m1 || !m2) continue
+
+    const t1 = [m1.home_team, m1.away_team]
+    const t2 = [m2.home_team, m2.away_team]
+
+    const match = matches.find(
+      (rm) =>
+        !used.has(rm.id) &&
+        ((t1.includes(rm.home_team) && t2.includes(rm.away_team)) ||
+          (t2.includes(rm.home_team) && t1.includes(rm.away_team))),
+    )
+
+    if (match) {
+      result[k] = match
+      used.add(match.id)
+    }
+  }
+
+  let fill = 0
+  for (const m of matches) {
+    if (!used.has(m.id)) {
+      while (fill < slotCount && result[fill] !== null) fill++
+      if (fill < slotCount) result[fill] = m
+    }
+  }
+
+  return result
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -190,12 +231,10 @@ function EmptyMatchCard() {
 function ResultsColumn({
   label,
   matches,
-  count,
   height,
 }: {
   label: string
-  matches: Match[]
-  count: number
+  matches: (Match | null)[]
   height: number
 }) {
   return (
@@ -204,12 +243,8 @@ function ResultsColumn({
         {label}
       </p>
       <div className="flex flex-col justify-around" style={{ height }}>
-        {Array.from({ length: count }, (_, i) =>
-          i < matches.length ? (
-            <BracketMatchCard key={matches[i].id} match={matches[i]} />
-          ) : (
-            <EmptyMatchCard key={`empty-${i}`} />
-          )
+        {matches.map((m, i) =>
+          m ? <BracketMatchCard key={m.id} match={m} /> : <EmptyMatchCard key={`empty-${i}`} />,
         )}
       </div>
     </div>
@@ -452,10 +487,11 @@ export default function ChaveamentoTabs({
     byStage.get(m.stage)!.push(m)
   }
 
-  const r32All = sortR32ByBracket(byStage.get('r32') ?? [])
-  const r16All = byStage.get('r16') ?? []
-  const qfAll = byStage.get('qf') ?? []
-  const sfAll = byStage.get('sf') ?? []
+  const r32Full = sortR32ByBracket(byStage.get('r32') ?? [])
+  const r32All = r32Full.filter(Boolean) as Match[]
+  const r16Full = sortByBracket(byStage.get('r16') ?? [], r32Full, 8)
+  const qfFull = sortByBracket(byStage.get('qf') ?? [], r16Full, 4)
+  const sfFull = sortByBracket(byStage.get('sf') ?? [], qfFull, 2)
   const finalMatch = byStage.get('final')?.[0]
   const thirdMatch = byStage.get('third')?.[0]
 
@@ -471,11 +507,11 @@ export default function ChaveamentoTabs({
 
   // Derived prediction matches (r32 teams come from DB; r16+ derived from picks)
   const r32LeftPred = padPredMatches(
-    r32All.slice(0, HALF).map((m) => ({ home: m.home_team, away: m.away_team })),
+    r32Full.slice(0, HALF).map((m) => (m ? { home: m.home_team, away: m.away_team } : { home: null, away: null })),
     HALF,
   )
   const r32RightPred = padPredMatches(
-    r32All.slice(HALF).map((m) => ({ home: m.home_team, away: m.away_team })),
+    r32Full.slice(HALF).map((m) => (m ? { home: m.home_team, away: m.away_team } : { home: null, away: null })),
     HALF,
   )
 
@@ -533,13 +569,13 @@ export default function ChaveamentoTabs({
         <>
           <div className="overflow-x-auto pb-4">
             <div className="flex gap-0 min-w-max items-start">
-              <ResultsColumn label="16 avos" matches={r32All.slice(0, HALF)} count={HALF} height={halfH} />
+              <ResultsColumn label="16 avos" matches={r32Full.slice(0, HALF)} height={halfH} />
               <BracketConnector count={HALF} height={halfH} />
-              <ResultsColumn label="Oitavas" matches={r16All.slice(0, 4)} count={4} height={halfH} />
+              <ResultsColumn label="Oitavas" matches={r16Full.slice(0, 4)} height={halfH} />
               <BracketConnector count={4} height={halfH} />
-              <ResultsColumn label="Quartas" matches={qfAll.slice(0, 2)} count={2} height={halfH} />
+              <ResultsColumn label="Quartas" matches={qfFull.slice(0, 2)} height={halfH} />
               <BracketConnector count={2} height={halfH} />
-              <ResultsColumn label="Semifinal" matches={sfAll.slice(0, 1)} count={1} height={halfH} />
+              <ResultsColumn label="Semifinal" matches={sfFull.slice(0, 1)} height={halfH} />
               <BracketConnector count={1} height={halfH} />
 
               <div className="flex flex-col" style={{ width: CARD_W }}>
@@ -552,13 +588,13 @@ export default function ChaveamentoTabs({
               </div>
 
               <BracketConnector count={1} height={halfH} reversed />
-              <ResultsColumn label="Semifinal" matches={sfAll.slice(1)} count={1} height={halfH} />
+              <ResultsColumn label="Semifinal" matches={sfFull.slice(1, 2)} height={halfH} />
               <BracketConnector count={2} height={halfH} reversed />
-              <ResultsColumn label="Quartas" matches={qfAll.slice(2)} count={2} height={halfH} />
+              <ResultsColumn label="Quartas" matches={qfFull.slice(2, 4)} height={halfH} />
               <BracketConnector count={4} height={halfH} reversed />
-              <ResultsColumn label="Oitavas" matches={r16All.slice(4)} count={4} height={halfH} />
+              <ResultsColumn label="Oitavas" matches={r16Full.slice(4, 8)} height={halfH} />
               <BracketConnector count={HALF} height={halfH} reversed />
-              <ResultsColumn label="16 avos" matches={r32All.slice(HALF)} count={HALF} height={halfH} />
+              <ResultsColumn label="16 avos" matches={r32Full.slice(8, 16)} height={halfH} />
             </div>
           </div>
 
